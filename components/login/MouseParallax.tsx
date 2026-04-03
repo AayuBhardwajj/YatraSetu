@@ -1,57 +1,44 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
-import { motion, useSpring, useMotionValue, useTransform } from "framer-motion";
+import React, { useEffect, useMemo } from "react";
+import { motion, useSpring, useMotionValue, useMotionTemplate } from "framer-motion";
 
 const Wave = ({ 
   className, 
   duration = 20, 
   opacity = 0.3, 
   delay = 0, 
-  height = 40,
-  points = 5
 }: { 
   className?: string; 
   duration?: number; 
   opacity?: number; 
   delay?: number;
-  height?: number;
-  points?: number;
 }) => {
-  const path = useMemo(() => {
-    const segments = [];
-    const step = 100 / (points - 1);
-    for (let i = 0; i < points; i++) {
-        segments.push(`${i * step}% ${50 + (i % 2 === 0 ? height : -height)}%`);
-    }
-    return `M -10% 50% Q 25% ${50 + height}% 50% 50% T 110% 50% V 110% H -10% Z`;
-  }, [height, points]);
-
   return (
     <motion.div
       className={`absolute inset-0 ${className}`}
-      initial={{ x: "-10%", opacity: 0 }}
+      initial={{ x: "-20%", opacity: 0 }}
       animate={{ 
-        x: ["-10%", "0%", "-10%"],
+        x: ["-20%", "0%", "-20%"],
         opacity: opacity
       }}
       transition={{
         x: {
           duration: duration,
           repeat: Infinity,
-          ease: "linear",
+          ease: "easeInOut",
           delay: delay
         },
         opacity: { duration: 2 }
       }}
     >
       <svg
-        viewBox="0 0 100 100"
+        viewBox="0 0 1000 100"
         preserveAspectRatio="none"
-        className="w-[200%] h-full"
+        className="w-[300%] h-full opacity-50"
       >
         <path
-          d="M 0 50 C 20 20 40 80 60 50 C 80 20 100 80 120 50 C 140 20 160 80 180 50 V 100 H 0 Z"
+          d="M0 50 C 150 0, 350 100, 500 50 C 650 0, 850 100, 1000 50 L 1000 100 L 0 100 Z"
           fill="currentColor"
         />
       </svg>
@@ -63,8 +50,8 @@ export const MouseParallax: React.FC<{ children?: React.ReactNode }> = ({ childr
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
-  const springX = useSpring(mouseX, { stiffness: 100, damping: 30 });
-  const springY = useSpring(mouseY, { stiffness: 100, damping: 30 });
+  const springX = useSpring(mouseX, { stiffness: 50, damping: 20 });
+  const springY = useSpring(mouseY, { stiffness: 50, damping: 20 });
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -75,44 +62,47 @@ export const MouseParallax: React.FC<{ children?: React.ReactNode }> = ({ childr
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, [mouseX, mouseY]);
 
+  const background = useMotionTemplate`radial-gradient(800px circle at ${springX}px ${springY}px, rgba(108, 71, 255, 0.15), transparent 80%)`;
+
   return (
     <div className="relative w-full h-screen overflow-hidden bg-[#000000] flex items-center justify-center">
       {/* Animated Layered Waves */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <Wave 
-          className="text-primary/20 blur-xl" 
-          duration={25} 
-          opacity={0.15} 
+          className="text-primary/40 blur-2xl" 
+          duration={20} 
+          opacity={0.2} 
           delay={0}
         />
         <Wave 
-          className="text-primary/10 blur-2xl" 
-          duration={35} 
-          opacity={0.1} 
+          className="text-primary/20 blur-3xl" 
+          duration={30} 
+          opacity={0.15} 
           delay={-5}
         />
         <Wave 
-          className="text-primary/30 blur-3xl" 
-          duration={18} 
-          opacity={0.08} 
+          className="text-primary/60 blur-xl" 
+          duration={15} 
+          opacity={0.1} 
           delay={-2}
         />
       </div>
 
-      {/* Radial Glow Cursor Following Effect (Illuminates waves) */}
+      {/* Radial Glow Cursor Following Effect */}
       <motion.div
-        className="absolute inset-0 pointer-events-none mix-blend-overlay"
-        style={{
-          background: `radial-gradient(800px circle at var(--x) var(--y), rgba(108, 71, 255, 0.4), transparent 80%)`,
-          "--x": springX.get() + "px",
-          "--y": springY.get() + "px"
-        } as any}
+        className="absolute inset-0 pointer-events-none"
+        style={{ background }}
       />
       
       {/* Dynamic Deep Aura Glow */}
       <motion.div
-        className="absolute w-[1000px] h-[1000px] bg-primary/10 rounded-full blur-[150px] pointer-events-none opacity-40 mix-blend-screen"
-        style={{ x: useSpring(mouseX, { stiffness: 40 }), y: useSpring(mouseY, { stiffness: 40 }), left: -500, top: -500 }}
+        className="absolute w-[1200px] h-[1200px] bg-primary/10 rounded-full blur-[160px] pointer-events-none opacity-50"
+        style={{ 
+          x: useSpring(mouseX, { stiffness: 30, damping: 25 }), 
+          y: useSpring(mouseY, { stiffness: 30, damping: 25 }), 
+          left: -600, 
+          top: -600 
+        }}
       />
 
       <div className="relative z-10 w-full h-full flex items-center justify-center">
