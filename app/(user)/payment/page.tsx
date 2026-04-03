@@ -2,191 +2,158 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Star, IndianRupee, Wallet, CreditCard, ChevronRight, X } from "lucide-react";
+import { 
+  Check, 
+  Star, 
+  IndianRupee, 
+  Wallet, 
+  CreditCard, 
+  ChevronRight, 
+  X,
+  ShieldCheck,
+  Smartphone,
+  Banknote,
+  Plus
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useRideStore } from "@/store/useRideStore";
 import { useNegotiationStore } from "@/store/useNegotiationStore";
 import { cn } from "@/lib/utils";
 
-const TIPS = [0, 10, 20, 50];
+const PAYMENT_METHODS = [
+  { id: "wallet", label: "Zipp Wallet", subtext: "Balance: ₹420", icon: Wallet, color: "text-primary", bg: "bg-primary-light" },
+  { id: "upi", label: "UPI (PhonePe / GPay)", subtext: "Quick & Secure", icon: Smartphone, color: "text-blue-500", bg: "bg-blue-50" },
+  { id: "card", label: "Credit/Debit Card", subtext: "Add new card", icon: CreditCard, color: "text-purple-500", bg: "bg-purple-50" },
+  { id: "cash", label: "Cash", subtext: "Pay at destination", icon: Banknote, color: "text-success", bg: "bg-success-light" },
+];
 
 export default function PaymentPage() {
   const router = useRouter();
   const { currentRide, clearRide } = useRideStore();
-  const { userOffer, mlSuggested } = useNegotiationStore();
+  const { userOffer } = useNegotiationStore();
   
-  const [selectedTip, setSelectedTip] = useState(0);
-  const [rating, setRating] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState("wallet");
   const [isPaid, setIsPaid] = useState(false);
 
-  const savings = mlSuggested - userOffer;
-  const totalPrice = userOffer + selectedTip;
+  const finalAmount = userOffer || 160;
 
   const handlePay = () => {
     setIsPaid(true);
     setTimeout(() => {
       clearRide();
       router.push("/home");
-    }, 3000);
+    }, 2000);
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-muted/30">
-      {/* Header */}
-      <header className="p-4 bg-white border-b border-border flex items-center justify-between z-10 sticky top-0">
-        <h1 className="heading-sm text-foreground">Ride Completed</h1>
-        <button className="text-muted-foreground" onClick={() => router.push("/home")}>
-          <X className="w-5 h-5" />
-        </button>
-      </header>
+    <div className="min-h-[calc(100vh-64px)] w-full bg-muted/30 flex items-start justify-center p-8 overflow-y-auto no-scrollbar">
+      <div className="w-full max-w-[600px] space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-[28px] font-bold text-text-primary">Payment Methods</h1>
+          <p className="text-text-secondary font-medium">Select your preferred way to pay</p>
+        </div>
 
-      <div className="flex-1 p-4 space-y-6 overflow-y-auto pb-32">
-        {/* Receipt Card */}
-        <Card className="p-6 border-border bg-white rounded-card shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-primary/20" />
-          
-          <div className="text-center mb-6">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">Total Amount</p>
-            <h2 className="text-[40px] font-bold text-foreground font-tabular leading-none">₹{totalPrice}</h2>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex justify-between text-sm py-2 border-b border-dashed border-border opacity-70">
-              <span className="text-muted-foreground">From</span>
-              <span className="font-medium text-foreground text-right">{currentRide?.from || "Sector 17"}</span>
+        {/* Amount Card */}
+        <Card className="p-8 border-none shadow-xl shadow-primary/5 bg-white rounded-2xl flex flex-col items-center space-y-4">
+          <div className="flex flex-col items-center">
+            <span className="text-[12px] font-bold text-text-muted uppercase tracking-widest">Amount to pay</span>
+            <div className="text-[48px] font-bold text-text-primary font-tabular tracking-tight">
+              ₹{finalAmount}.00
             </div>
-            <div className="flex justify-between text-sm py-2 border-b border-dashed border-border opacity-70">
-              <span className="text-muted-foreground">To</span>
-              <span className="font-medium text-foreground text-right">{currentRide?.to || "Ludhiana"}</span>
-            </div>
-            
-            <div className="space-y-2 pt-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Base Fare</span>
-                <span className="font-tabular font-medium">₹130</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Distance (3.2km)</span>
-                <span className="font-tabular font-medium">₹50</span>
-              </div>
-              {savings > 0 && (
-                <div className="flex justify-between text-sm text-success">
-                  <span className="font-medium">Negotiation Discount</span>
-                  <span className="font-tabular font-bold">-₹{savings}</span>
-                </div>
-              )}
-              {selectedTip > 0 && (
-                <div className="flex justify-between text-sm text-primary">
-                  <span className="font-medium">Driver Tip</span>
-                  <span className="font-tabular font-bold">+₹{selectedTip}</span>
-                </div>
-              )}
+            <div className="px-4 py-1.5 bg-primary-light text-primary rounded-full text-sm font-semibold flex items-center space-x-2">
+              <span className="w-1.5 h-1.5 bg-primary rounded-full" />
+              <span>Trip to Railway Station</span>
             </div>
           </div>
         </Card>
 
-        {/* Payment Methods */}
-        <div className="space-y-3">
-          <h3 className="text-[12px] font-bold text-muted-foreground uppercase tracking-widest pl-1">Payment Method</h3>
-          <div className="grid grid-cols-1 gap-2">
-            {[
-              { id: "wallet", label: "Wallet (₹240)", icon: Wallet },
-              { id: "upi", label: "Google Pay / UPI", icon: IndianRupee },
-              { id: "card", label: "Credit / Debit Card", icon: CreditCard },
-            ].map((method) => (
+        {/* Payment Options */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-bold text-text-secondary uppercase tracking-widest pl-1">Choose Payment Option</h3>
+          <div className="grid grid-cols-1 gap-3">
+            {PAYMENT_METHODS.map((method) => (
               <button
                 key={method.id}
                 onClick={() => setPaymentMethod(method.id)}
                 className={cn(
-                  "flex items-center justify-between p-4 rounded-xl border transition-all active:scale-[0.99]",
+                  "flex items-center justify-between p-5 rounded-2xl border-2 transition-all duration-200 group text-left",
                   paymentMethod === method.id 
-                    ? "bg-primary/5 border-primary ring-1 ring-primary" 
-                    : "bg-white border-border"
+                    ? "bg-white border-primary shadow-lg shadow-primary/5" 
+                    : "bg-white border-transparent hover:border-border"
                 )}
               >
-                <div className="flex items-center gap-3">
-                  <div className={cn("p-2 rounded-lg", paymentMethod === method.id ? "bg-primary/10" : "bg-muted")}>
-                    <method.icon className={cn("w-5 h-5", paymentMethod === method.id ? "text-primary" : "text-muted-foreground")} />
+                <div className="flex items-center space-x-4">
+                  <div className={cn("p-3 rounded-xl", method.bg)}>
+                    <method.icon className={cn("w-6 h-6", method.color)} />
                   </div>
-                  <span className={cn("text-sm font-bold", paymentMethod === method.id ? "text-primary" : "text-foreground")}>
-                    {method.label}
-                  </span>
+                  <div className="flex flex-col">
+                    <span className={cn("text-[16px] font-bold transition-colors", 
+                      paymentMethod === method.id ? "text-primary" : "text-text-primary"
+                    )}>
+                      {method.label}
+                    </span>
+                    <span className="text-sm text-text-muted font-medium">{method.subtext}</span>
+                  </div>
                 </div>
-                {paymentMethod === method.id && <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center"><Check className="w-3 h-3 text-white" /></div>}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Tips Section */}
-        <div className="space-y-3">
-          <h3 className="text-[12px] font-bold text-muted-foreground uppercase tracking-widest pl-1">Add a Tip</h3>
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {TIPS.map((tip) => (
-              <button
-                key={tip}
-                onClick={() => setSelectedTip(tip)}
-                className={cn(
-                  "flex-shrink-0 min-w-16 px-4 py-2.5 rounded-full border text-sm font-bold transition-all",
-                  selectedTip === tip 
-                    ? "bg-primary border-primary text-white" 
-                    : "bg-white border-border text-foreground"
+                {paymentMethod === method.id ? (
+                  <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white animate-in zoom-in">
+                    <Check className="w-4 h-4 text-white" />
+                  </div>
+                ) : (
+                  <div className="w-6 h-6 rounded-full border-2 border-muted group-hover:border-text-muted" />
                 )}
-              >
-                {tip === 0 ? "Skip" : `₹${tip}`}
-              </button>
-            ))}
-            <button className="flex-shrink-0 px-4 py-2.5 rounded-full border border-border bg-white text-sm font-bold text-foreground">Custom</button>
-          </div>
-        </div>
-
-        {/* Rating Section */}
-        <div className="bg-white p-6 rounded-card border border-border text-center space-y-4">
-          <p className="text-sm font-bold text-foreground">How was your ride with Rajesh Kumar?</p>
-          <div className="flex justify-center gap-3">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <button 
-                key={s}
-                onClick={() => setRating(s)}
-                className="transition-transform active:scale-90"
-              >
-                <Star 
-                  className={cn(
-                    "w-8 h-8", 
-                    s <= rating ? "text-[#FFC107] fill-[#FFC107]" : "text-muted-foreground/30"
-                  )} 
-                />
               </button>
             ))}
           </div>
-          <textarea 
-            placeholder="Tell us about your ride..."
-            className="w-full bg-muted border border-border rounded-xl p-3 text-sm min-h-[80px] focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-        </div>
-      </div>
 
-      {/* Pay Action button */}
-      <footer className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-border z-30 pb-12 flex justify-center">
-        <div className="w-full max-w-[430px]">
+          {/* Add New Option */}
+          <button className="w-full flex items-center justify-center space-x-2 p-4 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-white transition-all text-text-muted hover:text-primary">
+            <Plus className="w-5 h-5" />
+            <span className="text-sm font-bold">Add New Payment Method</span>
+          </button>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="space-y-6 pt-4">
           <Button 
             onClick={handlePay}
             disabled={isPaid}
-            className="w-full h-14 bg-primary hover:bg-primary/90 text-white rounded-pill text-base font-bold shadow-lg shadow-primary/20 flex items-center justify-center gap-3"
+            className="w-full h-16 bg-primary hover:bg-primary/90 text-white rounded-2xl text-lg font-bold shadow-xl shadow-primary/20 flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
           >
             {isPaid ? (
               <>
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Processing...
+                <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Processing Payment...</span>
               </>
             ) : (
-              `Pay ₹${totalPrice}`
+              `Pay ₹${finalAmount}`
             )}
           </Button>
+
+          <div className="flex items-center justify-center space-x-6">
+            <div className="flex items-center space-x-2 text-text-muted">
+              <ShieldCheck className="w-5 h-5 text-success" />
+              <span className="text-[13px] font-bold uppercase tracking-tight">Encrypted & Secure</span>
+            </div>
+            <div className="w-px h-4 bg-border" />
+            <div className="flex items-center space-x-2 text-text-muted">
+              <Check className="w-5 h-5 text-success" />
+              <span className="text-[13px] font-bold uppercase tracking-tight">Verified Merchant</span>
+            </div>
+          </div>
         </div>
-      </footer>
+
+        {/* Safety Note */}
+        <p className="text-center text-[12px] text-text-muted font-medium px-8 leading-relaxed">
+          Your payment information is kept secure. By completing your payment, you agree to our 
+          <span className="text-primary font-bold cursor-pointer hover:underline mx-1">Terms of Service</span> 
+          and 
+          <span className="text-primary font-bold cursor-pointer hover:underline mx-1">Privacy Policy</span>.
+        </p>
+      </div>
     </div>
   );
 }

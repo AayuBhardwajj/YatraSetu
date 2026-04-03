@@ -19,13 +19,14 @@ const config: Config = {
     },
     extend: {
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        border: "#E5E7EB",
+        input: "#E5E7EB",
+        ring: "#6C47FF",
+        background: "#F4F4F8",
+        foreground: "#0D0D0D",
         primary: {
           DEFAULT: "#6C47FF",
+          light: "#EEF0FF",
           foreground: "#FFFFFF",
         },
         success: {
@@ -44,8 +45,13 @@ const config: Config = {
           DEFAULT: "#FFFFFF",
           foreground: "#0D0D0D",
         },
+        text: {
+          primary: "#0D0D0D",
+          secondary: "#6B7280",
+          muted: "#9CA3AF",
+        },
         muted: {
-          DEFAULT: "#F7F7FA",
+          DEFAULT: "#F4F4F8",
           foreground: "#6B7280",
         },
         accent: {
@@ -58,13 +64,11 @@ const config: Config = {
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-        input: "8px",
-        card: "12px",
-        sheet: "16px",
-        pill: "24px",
+        sm: "8px",
+        md: "12px",
+        lg: "16px",
+        xl: "24px",
+        pill: "9999px",
       },
       spacing: {
         1: "4px",
@@ -76,9 +80,10 @@ const config: Config = {
         8: "32px",
         10: "40px",
         12: "48px",
+        16: "64px",
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "sans-serif"],
+        sans: ["Inter", "sans-serif"],
       },
       boxShadow: {
         none: "none",

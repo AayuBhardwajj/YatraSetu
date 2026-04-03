@@ -2,129 +2,172 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { TrendingUp, Calendar, ChevronRight, Activity, ArrowUpRight, Clock, Target } from "lucide-react";
+import { 
+  TrendingUp, 
+  Calendar, 
+  ChevronRight, 
+  Activity, 
+  ArrowUpRight, 
+  Clock, 
+  Target,
+  Download,
+  IndianRupee,
+  Wallet,
+  ArrowDownCircle,
+  BarChart3
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
-const RECENT_TRIPS = [
-  { id: 1, time: "11:20 AM", from: "Sector 17", to: "Chandigarh Airport", amount: 240, status: "completed" },
-  { id: 2, time: "10:15 AM", from: "MBD Mall", to: "Ludhiana Stn", amount: 160, status: "completed" },
-  { id: 3, time: "08:45 AM", from: "Saraba Nagar", to: "Model Town", amount: 85, status: "completed" },
+const DAILY_STATS = [
+  { day: "Mon", amount: 1200, height: "60%" },
+  { day: "Tue", amount: 1500, height: "75%" },
+  { day: "Wed", amount: 900, height: "45%" },
+  { day: "Thu", amount: 1800, height: "90%" },
+  { day: "Fri", amount: 1400, height: "70%" },
+  { day: "Sat", amount: 2100, height: "100%" },
+  { day: "Sun", amount: 1100, height: "55%" },
+];
+
+const PAYOUT_HISTORY = [
+  { id: "P1", date: "01 Apr 2024", amount: "₹5,420", status: "Paid", bank: "HDFC Bank •••• 4231" },
+  { id: "P2", date: "25 Mar 2024", amount: "₹4,890", status: "Paid", bank: "SBI Bank •••• 9812" },
+  { id: "P3", date: "18 Mar 2024", amount: "₹6,120", status: "Paid", bank: "HDFC Bank •••• 4231" },
 ];
 
 export default function DriverEarningsPage() {
   const [period, setPeriod] = useState("week");
   const router = useRouter();
 
-  const earnings = period === "today" ? "₹840" : period === "week" ? "₹5,420" : "₹24,800";
-  const trips = period === "today" ? "12" : period === "week" ? "47" : "184";
-
   return (
-    <div className="flex flex-col min-h-screen bg-muted/30">
-      {/* Header */}
-      <header className="p-4 bg-white border-b border-border sticky top-0 z-10">
-        <h1 className="heading-sm text-foreground">Earnings</h1>
-      </header>
+    <div className="min-h-[calc(100vh-64px)] w-full bg-muted/30 flex justify-center p-8 overflow-y-auto no-scrollbar">
+      <div className="w-full max-w-[1000px] space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        
+        <div className="flex items-center justify-between">
+          <h1 className="text-[28px] font-bold text-text-primary underline decoration-success/20 underline-offset-8">Earnings</h1>
+          <div className="flex items-center space-x-3">
+            <Button variant="outline" className="bg-white border-border text-text-secondary hover:text-primary rounded-xl font-bold">
+              <Download className="w-4 h-4 mr-2" />
+              Statement
+            </Button>
+            <Button className="bg-success hover:bg-success/90 text-white rounded-xl font-bold px-6 shadow-lg shadow-success/10 transition-all active:scale-[0.98]">
+              Withdraw Funds
+            </Button>
+          </div>
+        </div>
 
-      <div className="flex-1 p-4 space-y-6 overflow-y-auto pb-32">
-        {/* Period Selector */}
-        <Tabs defaultValue="week" className="w-full" onValueChange={setPeriod}>
-          <TabsList className="grid grid-cols-3 w-full bg-muted/50 p-1 h-12 rounded-pill">
-            <TabsTrigger value="today" className="rounded-pill font-bold text-xs uppercase tracking-wider data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">Today</TabsTrigger>
-            <TabsTrigger value="week" className="rounded-pill font-bold text-xs uppercase tracking-wider data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">Week</TabsTrigger>
-            <TabsTrigger value="month" className="rounded-pill font-bold text-xs uppercase tracking-wider data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">Month</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {/* Top: Large Earnings Card (Glassmorphism Style) */}
+        <Card className="p-10 border-none bg-gradient-to-br from-success to-emerald-600 text-white rounded-[32px] shadow-2xl shadow-success/20 relative overflow-hidden group">
+          <div className="absolute top-[-20%] right-[-10%] w-96 h-96 bg-white/10 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-[2000ms]" />
+          
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <div className="space-y-1">
+                <span className="text-sm font-bold opacity-70 uppercase tracking-widest pl-1">Total Earnings (This Week)</span>
+                <div className="text-[64px] font-bold font-tabular leading-tight tracking-tighter">
+                  ₹8,420.50
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <Badge className="bg-white/20 text-white border-none px-4 py-1.5 rounded-full font-bold flex items-center">
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  +12.5% from last week
+                </Badge>
+                <div className="flex items-center text-white/70 text-sm font-bold">
+                  <Clock className="w-4 h-4 mr-2" />
+                  Cycle ends in 2 days
+                </div>
+              </div>
+            </div>
 
-        {/* Earnings Card */}
-        <Card className="p-6 bg-primary border-primary rounded-card text-white relative overflow-hidden shadow-xl shadow-primary/20">
-          <div className="absolute top-0 right-0 p-4 opacity-20 transform translate-x-4 -translate-y-4">
-            <Activity className="w-32 h-32" />
+            {/* Weekly Graph (Simple CSS Bar Chart) */}
+            <div className="h-[180px] flex items-end justify-between gap-3 px-4">
+              {DAILY_STATS.map((stat) => (
+                <div key={stat.day} className="flex-1 flex flex-col items-center group/bar">
+                  <div className="relative w-full flex flex-col items-center">
+                    <div className="absolute bottom-full mb-2 opacity-0 group-hover/bar:opacity-100 transition-opacity translate-y-1 group-hover/bar:translate-y-0 duration-300">
+                      <div className="bg-white text-success text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap">
+                        ₹{stat.amount}
+                      </div>
+                    </div>
+                    <div 
+                      className="w-full bg-white/20 group-hover/bar:bg-white/40 transition-all duration-500 rounded-t-lg"
+                      style={{ height: stat.height }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-bold mt-3 opacity-60 uppercase">{stat.day}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+
+        {/* Middle: Stats Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="p-6 border-none bg-white rounded-2xl shadow-xl shadow-black/5 flex items-center space-x-5 group hover:shadow-primary/5 transition-all">
+            <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
+              <Clock className="w-7 h-7" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest leading-none mb-1.5">Online Hours</span>
+              <span className="text-2xl font-bold text-text-primary font-tabular tracking-tight">32h 15m</span>
+            </div>
+          </Card>
+
+          <Card className="p-6 border-none bg-white rounded-2xl shadow-xl shadow-black/5 flex items-center space-x-5 group hover:shadow-primary/5 transition-all">
+            <div className="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
+              <BarChart3 className="w-7 h-7" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest leading-none mb-1.5">Total Trips</span>
+              <span className="text-2xl font-bold text-text-primary font-tabular tracking-tight">142</span>
+            </div>
+          </Card>
+
+          <Card className="p-6 border-none bg-white rounded-2xl shadow-xl shadow-black/5 flex items-center space-x-5 group hover:shadow-primary/5 transition-all">
+            <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform">
+              <IndianRupee className="w-7 h-7" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest leading-none mb-1.5">Collected Tips</span>
+              <span className="text-2xl font-bold text-text-primary font-tabular tracking-tight">₹420.00</span>
+            </div>
+          </Card>
+        </div>
+
+        {/* Bottom: Payout History */}
+        <section className="space-y-6 pt-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-text-secondary uppercase tracking-widest pl-1">Payout History</h3>
+            <Button variant="ghost" className="text-primary font-bold text-sm h-auto p-0 hover:bg-transparent">View Reports</Button>
           </div>
           
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-[12px] font-bold text-white/70 uppercase tracking-widest">Total Earnings</span>
-              <TrendingUp className="w-4 h-4 text-white/50" />
-            </div>
-            <h2 className="text-[44px] font-bold font-tabular leading-none mb-6">
-              {earnings}
-            </h2>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20">
-                <p className="text-[10px] font-bold text-white/60 uppercase tracking-tighter mb-1">Total Trips</p>
-                <div className="flex items-end gap-1">
-                  <span className="text-xl font-bold font-tabular">{trips}</span>
-                  <span className="text-[10px] font-medium text-white/50 mb-1">trips</span>
-                </div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20">
-                <p className="text-[10px] font-bold text-white/60 uppercase tracking-tighter mb-1">Avg per trip</p>
-                <div className="flex items-end gap-1">
-                  <span className="text-xl font-bold font-tabular">₹115</span>
-                  <ArrowUpRight className="w-3 h-3 text-success mb-1.5" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Payout Status Section */}
-        <Card className="p-4 border-2 border-dashed border-border bg-white rounded-card flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-muted/50 rounded-full flex items-center justify-center">
-              <Target className="w-5 h-5 text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-[13px] font-bold text-foreground">₹890 pending</p>
-              <p className="text-[11px] text-muted-foreground">Next payout: Friday, 4th April</p>
-            </div>
-          </div>
-          <button className="text-primary font-bold text-xs hover:underline">Details</button>
-        </Card>
-
-        {/* Transaction History */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-[13px] font-bold text-muted-foreground uppercase tracking-widest pl-1">
-              Recent Trips
-            </h3>
-            <button className="text-[11px] font-bold text-primary flex items-center gap-1">
-              View History <ChevronRight className="w-3 h-3" />
-            </button>
-          </div>
-
-          <div className="space-y-0.5">
-            {RECENT_TRIPS.map((trip) => (
-              <Card key={trip.id} className="p-4 border-border bg-white rounded-xl mb-2 flex items-center justify-between active:scale-[0.99] transition-transform">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-muted-foreground opacity-50" />
+          <div className="space-y-4">
+            {PAYOUT_HISTORY.map((payout) => (
+              <Card key={payout.id} className="p-6 border-border hover:border-success/30 transition-all bg-white rounded-2xl flex items-center justify-between group">
+                <div className="flex items-center space-x-5">
+                  <div className="w-12 h-12 bg-muted group-hover:bg-success-light rounded-2xl flex items-center justify-center text-text-muted group-hover:text-success transition-colors">
+                    <ArrowDownCircle className="w-6 h-6" />
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                       <span className="text-sm font-bold text-foreground font-tabular">{trip.time}</span>
-                       <Badge variant="outline" className="text-[9px] h-4 uppercase border-success/30 text-success bg-success/5 px-1 font-bold">
-                          {trip.status}
-                       </Badge>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground mt-0.5 truncate max-w-[160px]">
-                      {trip.from} → {trip.to}
-                    </p>
+                  <div className="flex flex-col">
+                    <span className="text-[16px] font-bold text-text-primary">{payout.amount} Transferred</span>
+                    <span className="text-xs text-text-muted font-medium">{payout.bank} • {payout.date}</span>
                   </div>
                 </div>
-                <div className="text-right">
-                   <p className="text-base font-bold text-foreground font-tabular">₹{trip.amount}</p>
-                   <p className="text-[10px] text-success font-medium">Earned</p>
+                <div className="flex items-center space-x-3">
+                  <div className="px-3 py-1 bg-success-light text-success font-bold text-[10px] uppercase tracking-widest rounded-full">
+                    {payout.status}
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-text-muted group-hover:text-success transition-all group-hover:translate-x-1" />
                 </div>
               </Card>
             ))}
           </div>
-        </div>
+        </section>
+
       </div>
     </div>
   );

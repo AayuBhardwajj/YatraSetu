@@ -14,208 +14,239 @@ import {
   XCircle,
   MoreHorizontal,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  MapPin,
+  Scale,
+  Zap,
+  Info,
+  Calendar,
+  Check,
+  X
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger,
-  DialogFooter
-} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 const DISPUTES = [
-  { id: "DISP-101", user: "Arjun Singh", driver: "Rajesh K.", type: "Overcharge", amount: "₹45", status: "open", date: "Today, 10:20 AM" },
-  { id: "DISP-102", user: "Priya M.", driver: "Gurpreet S.", type: "No-show", amount: "₹160", status: "review", date: "Today, 09:15 AM" },
-  { id: "DISP-103", user: "Amit V.", driver: "Suresh P.", type: "Route deviation", amount: "₹85", status: "resolved", date: "Yesterday, 04:30 PM" },
-  { id: "DISP-104", user: "Neha K.", driver: "Vikram R.", type: "Payment issue", amount: "₹310", status: "open", date: "Yesterday, 02:45 PM" },
+  { 
+    id: "DISP-101", 
+    user: "Arjun Singh", 
+    driver: "Rajesh K.", 
+    type: "Overcharge", 
+    amount: "₹45", 
+    status: "open", 
+    date: "Today, 10:20 AM",
+    reason: "The driver took a very long route and didn't follow Google Maps.",
+    driverResponse: "There was heavy traffic on the main road, had to take alternate.",
+    evidence: { gps: "Significant (2.4km deviation)", time: "Minor (+4m deviation)", rating: "4.8★ Driver" }
+  },
+  { 
+    id: "DISP-102", 
+    user: "Priya M.", 
+    driver: "Gurpreet S.", 
+    type: "No-show", 
+    amount: "₹160", 
+    status: "review", 
+    date: "Today, 09:15 AM",
+    reason: "Driver marked as arrived but was not at the location.",
+    driverResponse: "Rider was not responding to calls at the gate.",
+    evidence: { gps: "At Location (12m accuracy)", time: "Wait time: 8m", rating: "4.9★ Driver" }
+  },
+  { 
+    id: "DISP-103", 
+    user: "Amit V.", 
+    driver: "Suresh P.", 
+    type: "Route deviation", 
+    amount: "₹85", 
+    status: "resolved", 
+    date: "Yesterday, 04:30 PM",
+    reason: "Unprofessional behavior during the ride.",
+    driverResponse: "Politely asked rider to not eat in the car.",
+    evidence: { gps: "Standard Route", time: "On Time", rating: "4.2★ Driver" }
+  },
 ];
 
 export default function AdminDisputesPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDispute, setSelectedDispute] = useState<any>(null);
+  const [selectedId, setSelectedId] = useState(DISPUTES[0].id);
 
   const filteredDisputes = DISPUTES.filter(d => 
     d.user.toLowerCase().includes(searchTerm.toLowerCase()) || 
     d.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const selectedDispute = DISPUTES.find(d => d.id === selectedId) || DISPUTES[0];
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Dispute Resolution</h1>
-          <p className="text-sm text-muted-foreground mt-1">Review and resolve user-driver payment and ride disputes.</p>
+    <div className="flex h-[calc(100vh-144px)] w-full overflow-hidden bg-background rounded-[32px] border border-border/50 shadow-2xl">
+      
+      {/* Left Column: Dispute Queue (40%) */}
+      <div className="w-[40%] h-full flex flex-col border-r border-border bg-white overflow-hidden">
+        <div className="p-8 border-b border-border space-y-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-text-primary tracking-tight">Resolution Queue</h1>
+            <Badge className="bg-danger-light text-danger border-transparent px-3 py-1 rounded-full font-bold">
+              {DISPUTES.filter(d => d.status === "open").length} Critical
+            </Badge>
+          </div>
+          
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+            <Input 
+              placeholder="Search by ID or Name..." 
+              className="pl-11 h-12 bg-muted/40 border-none rounded-2xl font-medium focus-visible:ring-primary/10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
-        <div className="flex bg-white border border-border p-1 rounded-lg">
-          {["All", "Open", "Review", "Resolved"].map((status) => (
-            <button
-              key={status}
+
+        <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-4">
+          {filteredDisputes.map((dispute) => (
+            <Card 
+              key={dispute.id}
+              onClick={() => setSelectedId(dispute.id)}
               className={cn(
-                "px-4 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-widest transition-all",
-                status === "All" ? "bg-primary text-white" : "bg-white text-muted-foreground hover:text-foreground"
+                "p-5 border-2 transition-all cursor-pointer group rounded-2xl relative overflow-hidden",
+                selectedId === dispute.id 
+                  ? "border-primary bg-white shadow-xl shadow-primary/5" 
+                  : "border-transparent bg-muted/30 hover:bg-muted/50"
               )}
             >
-              {status}
-            </button>
+              {dispute.status === "open" && (
+                <div className="absolute top-0 left-0 w-1 h-full bg-danger" />
+              )}
+              
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{dispute.id}</span>
+                <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{dispute.date}</span>
+              </div>
+              
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <h3 className="font-bold text-text-primary group-hover:text-primary transition-colors">{dispute.type}</h3>
+                  <div className="flex items-center text-xs font-medium text-text-muted">
+                    {dispute.user} <ArrowRight className="w-3 h-3 mx-2 opacity-30" /> {dispute.driver}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-danger">{dispute.amount}</p>
+                </div>
+              </div>
+            </Card>
           ))}
         </div>
       </div>
 
-      {/* Search & Statistics */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        <Card className="lg:col-span-3 p-3 bg-white border-border rounded-xl flex items-center gap-3">
-          <Search className="w-5 h-5 text-muted-foreground ml-2" />
-          <Input 
-            placeholder="Search disputes by ID or Name..." 
-            className="flex-1 bg-muted/30 border-none rounded-lg h-11 text-sm shadow-none"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </Card>
-        <Card className="p-4 bg-danger/5 border-danger/20 rounded-xl flex items-center gap-4">
-           <div className="w-10 h-10 bg-danger/10 border border-danger/20 rounded-lg flex items-center justify-center">
-              <ShieldAlert className="w-5 h-5 text-danger" />
-           </div>
-           <div>
-              <p className="text-xl font-bold text-danger font-tabular">{DISPUTES.filter(d => d.status === "open").length}</p>
-              <p className="text-[10px] font-bold text-danger uppercase opacity-70">Critical Disputes</p>
-           </div>
-        </Card>
-      </div>
+      {/* Right Column: Case Details & Resolution (60%) */}
+      <div className="w-[60%] h-full flex flex-col bg-[#fcfdfe] relative">
+        {selectedDispute ? (
+          <>
+            {/* Header Details */}
+            <div className="p-10 border-b border-border flex items-center justify-between bg-white">
+              <div className="flex items-center space-x-6">
+                <div className="w-16 h-16 bg-muted rounded-[24px] flex items-center justify-center text-text-muted group-hover:scale-110 transition-transform">
+                  <Scale className="w-8 h-8" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-3">
+                    <h2 className="text-2xl font-bold text-text-primary tracking-tight">{selectedDispute.type} Claim</h2>
+                    <Badge className={cn(
+                      "uppercase text-[10px] font-bold px-3 py-1 rounded-full",
+                      selectedDispute.status === "open" ? "bg-danger text-white" : "bg-success text-white"
+                    )}>
+                      {selectedDispute.status}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-text-muted font-medium">Case ID: {selectedDispute.id} · Disputed Amount: <span className="text-danger font-bold">{selectedDispute.amount}</span></p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button variant="outline" className="h-11 rounded-xl border-border font-bold text-xs uppercase tracking-widest px-6 hover:bg-muted">
+                  <Info className="w-4 h-4 mr-2" />
+                  View Original Ride
+                </Button>
+              </div>
+            </div>
 
-      {/* Disputes Table */}
-      <Card className="bg-white border-border rounded-card overflow-hidden pb-12">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-border bg-muted/10">
-                <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Dispute ID</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Complaint Type</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Parties involved</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Amount Disputed</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Status / Date</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase tracking-widest text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {filteredDisputes.map((dispute) => (
-                <tr key={dispute.id} className="hover:bg-muted/30 transition-colors group">
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-bold text-foreground font-tabular">{dispute.id}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <Badge variant="outline" className="border-border text-foreground text-[10px] uppercase font-bold py-1">{dispute.type}</Badge>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                       <p className="text-[11px] font-bold text-foreground">{dispute.user}</p>
-                       <ArrowRight className="w-3 h-3 text-muted-foreground opacity-30" />
-                       <p className="text-[11px] font-bold text-muted-foreground">{dispute.driver}</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-bold text-danger font-tabular">{dispute.amount}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <StatusIcon status={dispute.status} />
-                      <span className="text-[11px] text-muted-foreground">{dispute.date}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <Dialog>
-                       <DialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-9 font-bold uppercase tracking-widest text-[10px] hover:bg-muted" onClick={() => setSelectedDispute(dispute)}>
-                            Review Details
-                          </Button>
-                       </DialogTrigger>
-                       {selectedDispute && <DisputeDetails dispute={selectedDispute} />}
-                    </Dialog>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+            {/* Case Body */}
+            <div className="flex-1 overflow-y-auto no-scrollbar p-10 space-y-10">
+              
+              {/* Evidence Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="p-5 border-none bg-white rounded-2xl shadow-xl shadow-black/5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">GPS Tracking</span>
+                    <MapPin className="w-4 h-4 text-primary" />
+                  </div>
+                  <p className="text-sm font-bold text-text-primary">{selectedDispute.evidence.gps}</p>
+                </Card>
+                <Card className="p-5 border-none bg-white rounded-2xl shadow-xl shadow-black/5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Timer Logs</span>
+                    <Clock className="w-4 h-4 text-primary" />
+                  </div>
+                  <p className="text-sm font-bold text-text-primary">{selectedDispute.evidence.time}</p>
+                </Card>
+                <Card className="p-5 border-none bg-white rounded-2xl shadow-xl shadow-black/5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Driver Health</span>
+                    <ShieldAlert className="w-4 h-4 text-primary" />
+                  </div>
+                  <p className="text-sm font-bold text-text-primary">{selectedDispute.evidence.rating}</p>
+                </Card>
+              </div>
+
+              {/* Descriptions */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2 text-text-muted">
+                    <User className="w-4 h-4" />
+                    <h4 className="text-xs font-bold uppercase tracking-widest">Rider Narrative</h4>
+                  </div>
+                  <div className="p-6 bg-blue-50/50 rounded-[32px] border border-blue-100 italic text-sm text-text-primary leading-relaxed">
+                    "{selectedDispute.reason}"
+                  </div>
+                  <p className="text-xs font-bold text-text-muted pl-4">— {selectedDispute.user}</p>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2 text-text-muted">
+                    <Car className="w-4 h-4" />
+                    <h4 className="text-xs font-bold uppercase tracking-widest">Driver Response</h4>
+                  </div>
+                  <div className="p-6 bg-emerald-50/50 rounded-[32px] border border-emerald-100 italic text-sm text-text-primary leading-relaxed">
+                    "{selectedDispute.driverResponse}"
+                  </div>
+                  <p className="text-xs font-bold text-text-muted pl-4">— {selectedDispute.driver}</p>
+                </div>
+              </div>
+
+              {/* Action Center */}
+              <div className="pt-6 border-t border-border flex flex-col items-center space-y-6">
+                <div className="flex items-center space-x-4 bg-muted/30 p-2 rounded-2xl">
+                  <Button className="h-14 bg-primary text-white rounded-xl font-bold px-10 shadow-xl shadow-primary/10 transition-all hover:bg-primary/90 active:scale-95 space-x-3">
+                    <Check className="w-5 h-5" />
+                    <span>Favor Rider (Refund {selectedDispute.amount})</span>
+                  </Button>
+                  <Button className="h-14 bg-white border-2 border-primary text-primary rounded-xl font-bold px-10 hover:bg-primary-light transition-all active:scale-95 space-x-3">
+                    <X className="w-5 h-5" />
+                    <span>Reject Claim</span>
+                  </Button>
+                </div>
+                <p className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em]">All resolutions are logged and final</p>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center flex-1 opacity-20">
+            <Scale className="w-32 h-32 mb-6" />
+            <h2 className="text-2xl font-bold">Select a case to resolve</h2>
+          </div>
+        )}
+      </div>
     </div>
-  );
-}
-
-function StatusIcon({ status }: { status: string }) {
-  if (status === "open") return (
-    <div className="w-2 h-2 bg-danger rounded-full ring-4 ring-danger/10" />
-  );
-  if (status === "review") return (
-    <div className="w-2 h-2 bg-warning rounded-full ring-4 ring-warning/10" />
-  );
-  return (
-    <div className="w-2 h-2 bg-success rounded-full ring-4 ring-success/10" />
-  );
-}
-
-function DisputeDetails({ dispute }: { dispute: any }) {
-  return (
-    <DialogContent className="max-w-[500px] bg-white border-border p-0">
-      <DialogHeader className="p-8 pb-4 bg-muted/10 border-b border-border">
-         <div className="flex items-center justify-between mb-4">
-            <Badge className={cn(
-               "uppercase text-[10px] font-bold px-3 py-1 border-none",
-               dispute.status === "open" ? "bg-danger text-white" : dispute.status === "resolved" ? "bg-success text-white" : "bg-warning text-white"
-            )}>{dispute.status}</Badge>
-            <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-widest">Reported {dispute.date}</span>
-         </div>
-         <DialogTitle className="text-xl font-bold text-foreground">Dispute: {dispute.type}</DialogTitle>
-         <DialogDescription className="text-sm text-muted-foreground mt-2">ID: {dispute.id} · Disputed Amount: <span className="text-danger font-bold">{dispute.amount}</span></DialogDescription>
-      </DialogHeader>
-
-      <div className="p-8 space-y-8">
-         <div className="grid grid-cols-2 gap-4">
-            <div className="bg-muted/30 p-4 rounded-xl border border-border">
-               <div className="flex items-center gap-2 mb-2">
-                  <User className="w-4 h-4 text-primary" />
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-70">Rider</span>
-               </div>
-               <p className="text-sm font-bold text-foreground">{dispute.user}</p>
-               <p className="text-[11px] text-muted-foreground mt-1">"The driver took a very long route and didn't follow Google Maps."</p>
-            </div>
-            <div className="bg-muted/30 p-4 rounded-xl border border-border">
-               <div className="flex items-center gap-2 mb-2">
-                  <Car className="w-4 h-4 text-primary" />
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-70">Driver</span>
-               </div>
-               <p className="text-sm font-bold text-foreground">{dispute.driver}</p>
-               <p className="text-[11px] text-muted-foreground mt-1">"There was heavy traffic on the main road, had to take alternate."</p>
-            </div>
-         </div>
-
-         <div className="space-y-4">
-            <h4 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest border-b border-border pb-2">Evidence & Context</h4>
-            <div className="space-y-3">
-               <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg">
-                  <span className="text-xs font-medium text-foreground">Recorded GPS Deviation</span>
-                  <span className="text-[10px] font-bold text-danger uppercase">Significant (2.4km)</span>
-               </div>
-               <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg">
-                  <span className="text-xs font-medium text-foreground">Ride Duration Deviation</span>
-                  <span className="text-[10px] font-bold text-warning uppercase">Minor (+4m)</span>
-               </div>
-            </div>
-         </div>
-      </div>
-
-      <DialogFooter className="p-8 bg-muted/10 border-t border-border grid grid-cols-2 gap-4">
-         <Button variant="outline" className="h-12 border-primary text-primary hover:bg-primary/5 font-bold uppercase tracking-widest text-[11px]">Favor Rider</Button>
-         <Button className="h-12 bg-primary text-white font-bold uppercase tracking-widest text-[11px]">Favor Driver</Button>
-      </DialogFooter>
-    </DialogContent>
   );
 }

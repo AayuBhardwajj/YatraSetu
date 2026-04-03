@@ -8,13 +8,15 @@ interface NegotiationTimerProps {
   onTimeout?: () => void;
   size?: number;
   strokeWidth?: number;
+  className?: string;
 }
 
 export const NegotiationTimer: React.FC<NegotiationTimerProps> = ({
   duration = 30,
   onTimeout,
-  size = 64,
-  strokeWidth = 6,
+  size = 120,
+  strokeWidth = 8,
+  className,
 }) => {
   const [timeLeft, setTimeLeft] = useState(duration);
   const radius = (size - strokeWidth) / 2;
@@ -36,14 +38,20 @@ export const NegotiationTimer: React.FC<NegotiationTimerProps> = ({
   const offset = circumference - (timeLeft / duration) * circumference;
 
   const getColor = () => {
-    if (timeLeft > duration * 0.6) return "stroke-success";
-    if (timeLeft > duration * 0.3) return "stroke-warning";
-    return "stroke-danger";
+    if (timeLeft > 20) return "text-success";
+    if (timeLeft > 10) return "text-warning";
+    return "text-danger";
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (
-    <div className="relative inline-flex items-center justify-center">
-      <svg width={size} height={size} className="transform -rotate-90">
+    <div className={cn("relative inline-flex items-center justify-center", className)}>
+      <svg width={size} height={size} className="transform -rotate-90 drop-shadow-sm">
         {/* Background circle */}
         <circle
           cx={size / 2}
@@ -68,7 +76,9 @@ export const NegotiationTimer: React.FC<NegotiationTimerProps> = ({
           className={cn("transition-all duration-1000 ease-linear", getColor())}
         />
       </svg>
-      <span className="absolute text-lg font-medium tabular-nums">{timeLeft}</span>
+      <div className="absolute flex flex-col items-center">
+        <span className="text-2xl font-bold font-tabular text-text-primary">{formatTime(timeLeft)}</span>
+      </div>
     </div>
   );
 };

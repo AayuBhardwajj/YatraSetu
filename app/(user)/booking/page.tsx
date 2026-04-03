@@ -1,11 +1,23 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, User, Navigation2, Info, Bike, Car, Truck } from "lucide-react";
+import { 
+  ArrowLeft, 
+  MapPin, 
+  Navigation2, 
+  Info, 
+  Bike, 
+  Car, 
+  ChevronRight,
+  LocateFixed,
+  X,
+  ArrowUpDown
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { MapPlaceholder } from "@/components/shared/MapPlaceholder";
 import { PriceRangeBar } from "@/components/user/PriceRangeBar";
 import { MOCK_ML_PRICING } from "@/lib/mock/data";
 import { useRideStore } from "@/store/useRideStore";
@@ -13,18 +25,24 @@ import { useNegotiationStore } from "@/store/useNegotiationStore";
 import { cn } from "@/lib/utils";
 
 const CATEGORIES = [
-  { id: "bike", name: "Bike", icon: Bike, price: 45 },
-  { id: "auto", name: "Auto", icon: Car, price: 89 },
-  { id: "mini", name: "Mini", icon: Car, price: 130 },
-  { id: "sedan", name: "Sedan", icon: Car, price: 180 },
+  { id: "bike", name: "Bike", icon: Bike, price: 45, time: "~8 min" },
+  { id: "auto", name: "Auto", icon: Car, price: 89, time: "~10 min" },
+  { id: "mini", name: "Mini", icon: Car, price: 130, time: "~12 min" },
+  { id: "sedan", name: "Sedan", icon: Car, price: 180, time: "~14 min" },
 ];
 
 export default function BookingPage() {
   const [selectedCategory, setSelectedCategory] = useState("mini");
   const [destination, setDestination] = useState("");
+  const [isLoaded, setIsLoaded] = useState(false);
   const router = useRouter();
   const { setRide } = useRideStore();
   const { initNegotiation } = useNegotiationStore();
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoaded(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleBooking = () => {
     const category = CATEGORIES.find(c => c.id === selectedCategory);
@@ -39,135 +57,167 @@ export default function BookingPage() {
     });
 
     initNegotiation(MOCK_ML_PRICING.suggestedPrice, MOCK_ML_PRICING.minPrice, MOCK_ML_PRICING.maxPrice);
-    router.push("/negotiate");
+    router.push("/ride-negotiate");
   };
 
   return (
-    <div className="flex flex-col h-screen bg-surface">
-      {/* Header */}
-      <header className="p-4 flex items-center gap-4 border-b border-border">
-        <button 
-          onClick={() => router.back()}
-          className="p-2 hover:bg-muted rounded-full transition-colors"
-        >
-          <ArrowLeft className="w-6 h-6 text-foreground" />
-        </button>
-        <h1 className="heading-sm text-foreground">Confirm Trip</h1>
-      </header>
-
-      {/* Location Inputs */}
-      <div className="p-4 space-y-4">
-        <div className="relative pl-10 space-y-4">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 w-[2px] h-[40%] border-l-2 border-dashed border-border" />
-          
-          <div className="relative">
-            <div className="absolute left-[-28px] top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-success ring-4 ring-success/10" />
-            <Input 
-              value="Sector 17, Chandigarh" 
-              readOnly 
-              className="bg-muted border-none rounded-input h-12 text-sm font-medium"
-            />
+    <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden bg-background">
+      {/* Left Column: Map (60%) */}
+      <div className="w-[60%] h-full relative border-r border-border">
+        <MapPlaceholder 
+          height="100%" 
+          showDriverDots={false} 
+          showRouteLine={destination !== ""} 
+        />
+        
+        {/* Route Indicators */}
+        <div className="absolute top-6 left-6 z-10 flex flex-col space-y-2">
+          <div className="bg-white px-4 py-2 rounded-full shadow-md border border-border flex items-center space-x-2">
+            <div className="w-2.5 h-2.5 bg-success rounded-full" />
+            <span className="text-sm font-semibold">Sector 17, Chandigarh</span>
           </div>
-
-          <div className="relative">
-            <div className="absolute left-[-28px] top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-danger ring-4 ring-danger/10" />
-            <Input 
-              placeholder="Where to?" 
-              value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-              className="bg-white border-primary rounded-input h-12 text-sm font-medium ring-offset-2 focus:ring-2 focus:ring-primary"
-            />
-          </div>
+          {destination && (
+            <div className="bg-white px-4 py-2 rounded-full shadow-md border border-border flex items-center space-x-2 animate-in slide-in-from-top-2">
+              <div className="w-2.5 h-2.5 bg-danger rounded-full" />
+              <span className="text-sm font-semibold">{destination}</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Categories */}
-      <div className="flex-1 overflow-y-auto px-4 py-2">
-        <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide">
-          {CATEGORIES.map((cat) => {
-            const Icon = cat.icon;
-            const isSelected = selectedCategory === cat.id;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={cn(
-                  "flex-shrink-0 w-28 p-4 rounded-card border transition-all active:scale-95",
-                  isSelected 
-                    ? "bg-primary border-primary text-white shadow-md shadow-primary/20" 
-                    : "bg-surface border-border text-muted-foreground hover:border-primary/50"
-                )}
-              >
-                <Icon className={cn("w-6 h-6 mb-2", isSelected ? "text-white" : "text-primary")} />
-                <p className={cn("text-[13px] font-bold", isSelected ? "text-white" : "text-foreground")}>
-                  {cat.name}
-                </p>
-                <p className={cn("text-[11px] font-tabular mt-1", isSelected ? "text-white/80" : "text-muted-foreground")}>
-                  ₹{cat.price}
-                </p>
-              </button>
-            );
-          })}
-        </div>
+      {/* Right Column: Content (40%) */}
+      <div className="w-[40%] h-full bg-white overflow-y-auto no-scrollbar p-8 space-y-10">
+        
+        {/* Section 1: Route Inputs */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-[18px] font-[600] text-text-primary">Plan your trip</h2>
+            <Button variant="ghost" size="sm" className="text-primary hover:bg-primary-light">
+              <ArrowUpDown className="w-4 h-4 mr-2" />
+              Swap
+            </Button>
+          </div>
 
-        {/* ML Price Card */}
-        <div className="mt-4 animate-in fade-in slide-in-from-bottom-5 duration-500">
-          <Card className="p-4 border-primary bg-primary/5 rounded-card relative overflow-hidden group">
-            <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
+          <Card className="p-6 border-border shadow-none space-y-4 relative">
+            <div className="absolute left-[34px] top-[54px] bottom-[54px] w-0.5 border-l-2 border-dashed border-border" />
             
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span className="text-[12px] font-bold text-primary uppercase tracking-wider">AI Suggested Price</span>
-                <Info className="w-3 h-3 text-primary/60" />
-              </div>
-              <div className="bg-primary/10 px-2 py-1 rounded text-[10px] font-bold text-primary border border-primary/20">
-                LATEST MODEL v4.2
+            <div className="flex items-center space-x-4">
+              <div className="w-4 h-4 rounded-full bg-success ring-4 ring-success/10 flex-shrink-0" />
+              <div className="flex-1 flex items-center bg-muted rounded-lg px-4 h-12">
+                <span className="text-sm font-medium text-text-secondary">Current Location</span>
+                <Button variant="ghost" size="icon" className="ml-auto text-primary">
+                  <LocateFixed className="w-4 h-4" />
+                </Button>
               </div>
             </div>
 
-            <div className="mb-4">
-              <span className="text-[32px] font-bold font-tabular text-foreground">₹{MOCK_ML_PRICING.suggestedPrice}</span>
-              <span className="text-xs text-muted-foreground ml-2">estimated total</span>
-            </div>
-
-            <PriceRangeBar 
-              min={MOCK_ML_PRICING.minPrice} 
-              max={MOCK_ML_PRICING.maxPrice} 
-              suggested={MOCK_ML_PRICING.suggestedPrice}
-              className="mb-4"
-            />
-
-            <div className="flex gap-2">
-              <span className="bg-white/80 border border-border px-2 py-1 rounded-full text-[10px] font-medium text-muted-foreground">
-                Moderate demand
-              </span>
-              <span className="bg-white/80 border border-border px-2 py-1 rounded-full text-[10px] font-medium text-muted-foreground">
-                3.2km
-              </span>
-              <span className="bg-white/80 border border-border px-2 py-1 rounded-full text-[10px] font-medium text-muted-foreground">
-                ~12 min
-              </span>
+            <div className="flex items-center space-x-4">
+              <div className="w-4 h-4 rounded-full bg-danger ring-4 ring-danger/10 flex-shrink-0" />
+              <div className="flex-1 flex items-center bg-white border border-primary rounded-lg px-4 h-12 ring-2 ring-primary-light">
+                <input
+                  autoFocus
+                  placeholder="Enter destination"
+                  value={destination}
+                  onChange={(e) => setDestination(e.target.value)}
+                  className="bg-transparent border-none outline-none text-sm font-medium text-text-primary w-full h-full"
+                />
+                {destination && (
+                  <Button variant="ghost" size="icon" className="ml-auto text-text-muted hover:text-text-primary" onClick={() => setDestination("")}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
             </div>
           </Card>
-        </div>
-      </div>
+        </section>
 
-      {/* Action Buttons */}
-      <footer className="p-4 bg-surface border-t border-border space-y-3 z-30 pb-24">
-        <Button 
-          onClick={handleBooking}
-          className="w-full h-14 bg-primary hover:bg-primary/90 text-white rounded-pill text-base font-bold shadow-lg shadow-primary/20 transition-transform active:scale-[0.98]"
-        >
-          Accept ₹{MOCK_ML_PRICING.suggestedPrice}
-        </Button>
-        <Button 
-          variant="outline"
-          onClick={() => router.push("/negotiate")}
-          className="w-full h-14 border-border bg-white text-foreground rounded-pill text-base font-medium transition-transform active:scale-[0.98]"
-        >
-          Negotiate Price
-        </Button>
-      </footer>
+        {/* Section 2: Ride Categories */}
+        <section className="space-y-4">
+          <h2 className="text-[18px] font-[600] text-text-primary">Choose your ride</h2>
+          <div className="grid grid-cols-2 gap-4">
+            {CATEGORIES.map((cat) => {
+              const Icon = cat.icon;
+              const isSelected = selectedCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={cn(
+                    "flex flex-col items-center justify-center p-6 rounded-xl border transition-all space-y-3",
+                    isSelected 
+                      ? "bg-primary-light border-2 border-primary shadow-sm" 
+                      : "bg-white border-border hover:border-primary/50"
+                  )}
+                >
+                  <div className={cn(
+                    "p-3 rounded-full",
+                    isSelected ? "bg-primary text-white" : "bg-muted text-primary"
+                  )}>
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <div className="text-center">
+                    <p className={cn("text-[15px] font-bold", isSelected ? "text-primary" : "text-text-primary")}>{cat.name}</p>
+                    <p className="text-xl font-bold text-text-primary font-tabular">₹{cat.price}</p>
+                    <p className="text-[12px] text-text-muted">{cat.time}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Section 3: ML Price Card */}
+        {isLoaded && (
+          <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <Card className="p-6 bg-primary-light border-l-4 border-l-primary border-y-0 border-r-0 rounded-none rounded-r-xl space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <span className="text-[13px] font-bold text-primary uppercase tracking-tight">AI Suggested Price</span>
+                  <Info className="w-3.5 h-3.5 text-primary opacity-60" />
+                </div>
+                <div className="px-2 py-0.5 bg-success/20 text-success text-[10px] font-bold rounded-md uppercase">
+                  Fair price
+                </div>
+              </div>
+
+              <div className="flex items-baseline space-x-2">
+                <span className="text-[40px] font-bold text-primary font-tabular tracking-tight">₹{MOCK_ML_PRICING.suggestedPrice}</span>
+                <span className="text-xs text-primary/60 font-medium">suggested fare</span>
+              </div>
+
+              <PriceRangeBar 
+                min={MOCK_ML_PRICING.minPrice} 
+                max={MOCK_ML_PRICING.maxPrice} 
+                suggested={MOCK_ML_PRICING.suggestedPrice}
+              />
+
+              <div className="flex flex-wrap gap-2">
+                {["Moderate demand", "3.2 km", "~12 min"].map((chip) => (
+                  <div key={chip} className="px-3 py-1 bg-white/60 border border-primary/10 rounded-full text-[11px] font-semibold text-primary">
+                    {chip}
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col space-y-3 pt-2">
+                <Button 
+                  onClick={handleBooking}
+                  className="w-full h-14 bg-primary hover:bg-primary/90 text-white rounded-xl text-base font-bold shadow-lg shadow-primary/20"
+                >
+                  Accept ₹{MOCK_ML_PRICING.suggestedPrice}
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => router.push("/ride-negotiate")}
+                  className="w-full h-14 border-primary text-primary hover:bg-primary hover:text-white rounded-xl text-base font-semibold transition-all"
+                >
+                  Negotiate Price
+                </Button>
+              </div>
+            </Card>
+          </section>
+        )}
+      </div>
     </div>
   );
 }

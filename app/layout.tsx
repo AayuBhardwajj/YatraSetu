@@ -5,7 +5,11 @@ import { cn } from "@/lib/utils";
 import QueryProvider from "@/components/providers/QueryProvider";
 import { Toaster } from "@/components/ui/Toaster";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const inter = Inter({ 
+  subsets: ["latin"], 
+  variable: "--font-inter",
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: "Zipp — Your City, On Demand",
@@ -14,8 +18,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={cn(inter.variable, "font-sans antialiased")}>
+    <html lang="en" className={inter.variable}>
+      <body className="font-sans antialiased bg-background text-foreground min-h-screen">
         <QueryProvider>
           {children}
           <Toaster />
