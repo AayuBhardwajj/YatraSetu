@@ -57,7 +57,7 @@ export default function BookingPage() {
     });
 
     initNegotiation(MOCK_ML_PRICING.suggestedPrice, MOCK_ML_PRICING.minPrice, MOCK_ML_PRICING.maxPrice);
-    router.push("/ride-negotiate");
+    router.push("/negotiate");
   };
 
   return (
@@ -208,7 +208,7 @@ export default function BookingPage() {
                 </Button>
                 <Button 
                   variant="outline"
-                  onClick={() => router.push("/ride-negotiate")}
+                  onClick={() => router.push("/negotiate")}
                   className="w-full h-14 border-primary text-primary hover:bg-primary hover:text-white rounded-xl text-base font-semibold transition-all"
                 >
                   Negotiate Price

@@ -21,8 +21,8 @@ export function middleware(req: NextRequest) {
     if (!token || role !== "driver") return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // User protection (home, booking, negotiate, tracking, payment)
-  const userPaths = ["/home", "/booking", "/negotiate", "/tracking", "/payment", "/activity", "/wallet", "/profile"];
+  // User protection (home, booking, negotiate, tracking, payment, history, ...)
+  const userPaths = ["/home", "/booking", "/negotiate", "/tracking", "/payment", "/activity", "/wallet", "/profile", "/history"];
   if (userPaths.some(p => path.startsWith(p))) {
     if (!token || role !== "rider") return NextResponse.redirect(new URL("/login", req.url));
   }
@@ -49,6 +49,7 @@ export const config = {
     "/activity/:path*",
     "/wallet/:path*",
     "/profile/:path*",
+    "/history/:path*",
     "/driver/:path*",
     "/admin/:path*",
   ]

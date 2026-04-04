@@ -19,10 +19,10 @@ import { Switch } from "@/components/ui/switch";
 import { useAuthStore } from "@/store/useAuthStore";
 
 const NAV_ITEMS = [
-  { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-  { label: "Ride Requests", icon: MapPin, href: "/requests" },
-  { label: "Earnings", icon: IndianRupee, href: "/earnings" },
-  { label: "Profile", icon: UserIcon, href: "/driver-profile" },
+  { label: "Dashboard", icon: LayoutDashboard, href: "/driver/dashboard" },
+  { label: "Ride Requests", icon: MapPin, href: "/driver/requests" },
+  { label: "Earnings", icon: IndianRupee, href: "/driver/earnings" },
+  { label: "Profile", icon: UserIcon, href: "/driver/profile" },
 ];
 
 export function DriverSidebar() {
@@ -75,7 +75,7 @@ export function DriverSidebar() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto pt-2">
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+          const isActive = pathname === item.href || (item.href !== "/driver/dashboard" && pathname.startsWith(item.href));
           const Icon = item.icon;
 
           return (
