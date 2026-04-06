@@ -49,12 +49,12 @@ export default function TrackingPage() {
 
   return (
     <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden bg-background">
-      {/* Left: Map Panel (70%) */}
-      <div className="w-[70%] h-full relative">
+      {/* Left: Map Panel */}
+      <div className="flex-[7] h-full relative min-w-0">
         <MapPlaceholder 
           height="100%" 
           showDriverDots={false} 
-          showRouteLine={true} 
+          showRoute={true} 
         />
         
         {/* Driver Pin with Pulsing Ring */}
@@ -75,124 +75,124 @@ export default function TrackingPage() {
         </div>
 
         {/* Map Overlay Pill */}
-        <div className="absolute bottom-10 left-10 z-10">
-          <div className="bg-white px-6 py-3 rounded-full shadow-xl border border-border flex items-center space-x-3">
-            <div className="w-2.5 h-2.5 bg-success rounded-full animate-pulse" />
-            <span className="text-[14px] font-bold text-text-primary uppercase tracking-tight">Driver is 1.2 km away</span>
+        <div className="absolute bottom-6 left-6 z-10">
+          <div className="bg-white/95 backdrop-blur-sm px-5 py-3 rounded-full shadow-xl border border-border/50 flex items-center space-x-2.5">
+            <div className="w-2.5 h-2.5 bg-success rounded-full animate-pulse flex-shrink-0" />
+            <span className="text-sm font-bold text-text-primary">Driver is 1.2 km away</span>
           </div>
         </div>
       </div>
 
-      {/* Right: Info Panel (30%) */}
-      <aside className="w-[30%] h-full bg-white border-l border-border overflow-y-auto no-scrollbar p-8 flex flex-col space-y-8">
-        
-        {/* Status Banner */}
-        <Card className="bg-success rounded-xl p-5 text-white border-none space-y-1 shadow-lg shadow-success/10">
-          <h2 className="text-[18px] font-bold">Driver is on the way</h2>
-          <p className="text-sm opacity-90">Arrives in approximately {eta} minutes</p>
-        </Card>
+      {/* Right: Info Panel */}
+      <aside className="flex-[3] h-full bg-white border-l border-border/50 overflow-y-auto no-scrollbar min-w-[300px] max-w-[380px]">
+        <div className="p-5 space-y-5">
+          {/* Status Banner */}
+          <Card className="bg-success rounded-xl p-4 text-white border-none shadow-md shadow-success/10">
+            <h2 className="text-base font-bold">Driver is on the way</h2>
+            <p className="text-sm opacity-80 mt-0.5">Arrives in ~{eta} minutes</p>
+          </Card>
 
-        {/* Driver Card */}
-        <Card className="p-6 border-border shadow-none space-y-6">
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 rounded-full bg-primary-light flex items-center justify-center text-primary font-bold text-2xl border-2 border-primary/10">
-              RK
-            </div>
-            <div className="flex-1">
-              <h3 className="text-[18px] font-bold text-text-primary leading-tight">Rajesh Kumar</h3>
-              <div className="flex items-center space-x-2 text-sm">
-                <div className="flex items-center text-warning font-bold">
-                  <Star className="w-3.5 h-3.5 fill-warning mr-1" />
-                  4.8
+          {/* Driver Card */}
+          <Card className="p-5 border-border/50 shadow-none space-y-5">
+            <div className="flex items-center space-x-3">
+              <div className="w-14 h-14 rounded-full bg-primary-light flex items-center justify-center text-primary font-bold text-xl border-2 border-primary/10 flex-shrink-0">
+                RK
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-bold text-text-primary leading-tight truncate">Rajesh Kumar</h3>
+                <div className="flex items-center space-x-2 text-sm mt-0.5">
+                  <div className="flex items-center text-warning font-bold">
+                    <Star className="w-3.5 h-3.5 fill-warning mr-0.5 flex-shrink-0" />
+                    4.8
+                  </div>
+                  <span className="text-text-muted">·</span>
+                  <span className="text-text-secondary font-medium truncate">1,240 trips</span>
                 </div>
-                <span className="text-text-muted">·</span>
-                <span className="text-text-secondary font-medium">1,240 trips</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-xs text-text-muted font-medium uppercase">Vehicle</span>
-                <span className="text-[15px] font-semibold text-text-primary">Maruti Swift Dzire</span>
-              </div>
-              <div className="px-3 py-1 bg-muted border border-border rounded font-mono text-xs font-bold text-text-primary">
-                PB-10-AB-1234
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center justify-between pt-2">
-              <Button size="icon" className="w-12 h-12 rounded-full bg-success hover:bg-success/90 shadow-md">
-                <Phone className="w-5 h-5" />
-              </Button>
-              <Button size="icon" className="w-12 h-12 rounded-full bg-blue-500 hover:bg-blue-600 shadow-md">
-                <MessageCircle className="w-5 h-5" />
-              </Button>
-              <Button size="icon" className="w-12 h-12 rounded-full bg-gray-200 hover:bg-gray-300 text-text-primary shadow-sm border border-border">
-                <Share2 className="w-5 h-5" />
-              </Button>
-              <Button size="icon" className="w-14 h-14 rounded-full bg-danger hover:bg-danger/90 shadow-lg pulse-danger">
-                <ShieldAlert className="w-6 h-6" />
-              </Button>
-            </div>
-          </div>
-        </Card>
-
-        {/* Trip Progress Stepper */}
-        <section className="space-y-4">
-          <h3 className="text-sm font-bold text-text-secondary uppercase tracking-widest pl-1">Trip Progress</h3>
-          <div className="space-y-6 relative pl-8">
-            <div className="absolute left-[15px] top-4 bottom-4 w-0.5 bg-muted" />
-            
-            {STEPS.map((step) => (
-              <div key={step.id} className="relative flex items-center space-x-4">
-                <div className={cn(
-                  "absolute left-[-23px] w-4 h-4 rounded-full border-2 z-10 transition-colors",
-                  step.status === "completed" ? "bg-success border-success" :
-                  step.status === "active" ? "bg-white border-primary animate-pulse" :
-                  "bg-white border-muted"
-                )}>
-                  {step.status === "completed" && <CheckCircle2 className="w-4 h-4 text-white -translate-x-[2px] -translate-y-[2px]" />}
-                  {step.status === "active" && <div className="w-1.5 h-1.5 bg-primary rounded-full m-auto mt-[3px]" />}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] text-text-muted font-medium uppercase tracking-wide">Vehicle</span>
+                  <span className="text-sm font-semibold text-text-primary truncate">Maruti Swift Dzire</span>
                 </div>
-                <div className="flex flex-col">
-                  <span className={cn(
-                    "text-sm font-bold",
-                    step.status === "upcoming" ? "text-text-muted" : "text-text-primary"
+                <div className="px-2.5 py-1 bg-muted border border-border/50 rounded font-mono text-xs font-bold text-text-primary flex-shrink-0">
+                  PB-10-AB-1234
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <Button size="icon" className="w-11 h-11 rounded-full bg-success hover:bg-success/90 shadow-md flex-shrink-0">
+                  <Phone className="w-4.5 h-4.5" />
+                </Button>
+                <Button size="icon" className="w-11 h-11 rounded-full bg-blue-500 hover:bg-blue-600 shadow-md flex-shrink-0">
+                  <MessageCircle className="w-4.5 h-4.5" />
+                </Button>
+                <Button size="icon" className="w-11 h-11 rounded-full bg-gray-200 hover:bg-gray-300 text-text-primary shadow-sm border border-border/50 flex-shrink-0">
+                  <Share2 className="w-4.5 h-4.5" />
+                </Button>
+                <Button size="icon" className="w-12 h-12 rounded-full bg-danger hover:bg-danger/90 shadow-lg flex-shrink-0">
+                  <ShieldAlert className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          {/* Trip Progress Stepper */}
+          <section className="space-y-3">
+            <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wider pl-1">Trip Progress</h3>
+            <div className="space-y-5 relative pl-7">
+              <div className="absolute left-[13px] top-3 bottom-3 w-0.5 bg-muted" />
+              
+              {STEPS.map((step) => (
+                <div key={step.id} className="relative flex items-center space-x-3">
+                  <div className={cn(
+                    "absolute left-[-20px] w-3.5 h-3.5 rounded-full border-2 z-10 transition-colors",
+                    step.status === "completed" ? "bg-success border-success" :
+                    step.status === "active" ? "bg-white border-primary animate-pulse" :
+                    "bg-white border-muted"
                   )}>
-                    {step.label}
-                  </span>
-                  {step.status === "active" && <span className="text-[11px] text-primary font-bold animate-pulse">Live</span>}
+                    {step.status === "completed" && <CheckCircle2 className="w-3.5 h-3.5 text-white -translate-x-[1px] -translate-y-[1px]" />}
+                    {step.status === "active" && <div className="w-1.5 h-1.5 bg-primary rounded-full m-auto mt-[2px]" />}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className={cn(
+                      "text-sm font-bold",
+                      step.status === "upcoming" ? "text-text-muted" : "text-text-primary"
+                    )}>
+                      {step.label}
+                    </span>
+                    {step.status === "active" && <span className="text-[11px] text-primary font-bold animate-pulse">Live</span>}
+                  </div>
                 </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Trip Details Card */}
+          <Card className="p-4 border-border/50 shadow-none space-y-3 bg-muted/20">
+            <div className="flex flex-col space-y-0.5">
+              <span className="text-[10px] text-text-muted uppercase font-bold tracking-wider">From</span>
+              <p className="text-sm font-semibold truncate">Model Town, Ludhiana</p>
+            </div>
+            <div className="flex flex-col space-y-0.5">
+              <span className="text-[10px] text-text-muted uppercase font-bold tracking-wider">To</span>
+              <p className="text-sm font-semibold truncate">Railway Station</p>
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t border-border/50">
+              <div className="flex flex-col">
+                <span className="text-[10px] text-text-muted uppercase font-bold tracking-wider">Estimated Fare</span>
+                <p className="text-lg font-bold text-text-primary font-tabular">₹160</p>
               </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Trip Details Card */}
-        <Card className="p-5 border-border shadow-none space-y-4 bg-muted/30">
-          <div className="flex flex-col space-y-1">
-            <span className="text-[10px] text-text-muted uppercase font-bold tracking-wider">From</span>
-            <p className="text-sm font-semibold truncate">Model Town, Ludhiana</p>
-          </div>
-          <div className="flex flex-col space-y-1">
-            <span className="text-[10px] text-text-muted uppercase font-bold tracking-wider">To</span>
-            <p className="text-sm font-semibold truncate">Railway Station</p>
-          </div>
-          <div className="flex items-center justify-between pt-2 border-t border-border">
-            <div className="flex flex-col">
-              <span className="text-[10px] text-text-muted uppercase font-bold tracking-wider">Estimated Fare</span>
-              <p className="text-lg font-bold text-text-primary font-tabular">₹160</p>
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] text-text-muted uppercase font-bold tracking-wider">Payment</span>
+                <span className="text-sm font-semibold text-primary">Wallet</span>
+              </div>
             </div>
-            <div className="flex flex-col items-end">
-              <span className="text-[10px] text-text-muted uppercase font-bold tracking-wider">Payment</span>
-              <span className="text-sm font-semibold text-primary">Wallet</span>
-            </div>
-          </div>
-        </Card>
-
+          </Card>
+        </div>
       </aside>
     </div>
   );

@@ -17,29 +17,47 @@
     --border: #E5E7EB;
   }
 
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', sans-serif;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
   }
 
   h1 {
-    @apply text-[24px] font-[600] text-text-primary;
+    @apply text-[24px] font-[600] text-text-primary leading-tight;
   }
 
   h2 {
-    @apply text-[18px] font-[600] text-text-primary;
+    @apply text-[18px] font-[600] text-text-primary leading-tight;
   }
 
   h3 {
-    @apply text-[15px] font-[500] text-text-primary;
+    @apply text-[15px] font-[500] text-text-primary leading-snug;
   }
 
   p {
-    @apply text-[14px] font-[400] text-text-secondary;
+    @apply text-[14px] font-[400] text-text-secondary leading-relaxed;
   }
 
   caption {
     @apply text-[12px] font-[400] text-text-muted;
+  }
+
+  /* Prevent input overflow */
+  input, textarea, select {
+    max-width: 100%;
   }
 }
 

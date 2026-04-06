@@ -1,18 +1,19 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef } from "react";
+import { gsap } from "gsap";
+import { useGSAP } from "@gsap/react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Car, Shield, Eye, EyeOff, Check, ArrowRight, Zap } from "lucide-react";
+import { User, Car, Shield, Eye, EyeOff, ArrowRight, CheckCircle2, ChevronRight, Mail, Lock } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { MouseParallax } from "@/components/login/MouseParallax";
+import { AuthBackground } from "@/components/login/MouseParallax";
 import { cn } from "@/lib/utils";
 
 const loginSchema = z.object({
@@ -20,34 +21,77 @@ const loginSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 chars"),
 });
 
+const signupSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 chars"),
+  email: z.string().email("Enter a valid email"),
+  password: z.string().min(6, "Password must be at least 6 chars"),
+});
+
 type LoginFormValues = z.infer<typeof loginSchema>;
+type SignupFormValues = z.infer<typeof signupSchema>;
 
 const ROLES = [
-  { id: "rider", label: "Rider", desc: "Book rides", icon: User },
-  { id: "driver", label: "Driver", desc: "Earn money", icon: Car },
-  { id: "admin", label: "Admin", desc: "Manage ops", icon: Shield },
+  { id: "rider", label: "Rider", desc: "Book & Go", icon: User },
+  { id: "driver", label: "Driver", desc: "Drive & Earn", icon: Car },
+  { id: "admin", label: "Admin", desc: "Control Panel", icon: Shield },
 ] as const;
 
-export default function LoginPage() {
+export default function AuthPage() {
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [selectedRole, setSelectedRole] = useState<(typeof ROLES)[number]["id"]>("rider");
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { login } = useAuthStore();
   const { toast } = useToast();
+  const container = useRef<HTMLDivElement>(null);
+
+  useGSAP(() => {
+    gsap.from(".brand-logo", {
+      y: 40,
+      opacity: 0,
+      duration: 1.2,
+      ease: "power3.out",
+      delay: 0.1
+    });
+
+    gsap.to(".gsap-word", {
+      y: 0,
+      opacity: 1,
+      duration: 1.2,
+      stagger: 0.1,
+      ease: "power4.out",
+      delay: 0.3
+    });
+
+    gsap.from(".gsap-fade-up", {
+      y: 30,
+      opacity: 0,
+      duration: 1,
+      stagger: 0.15,
+      ease: "power3.out",
+      delay: 0.7
+    });
+  }, { scope: container });
 
   const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
+    register: registerLogin,
+    handleSubmit: handleLoginSubmit,
+    formState: { errors: loginErrors, isSubmitting: isLoginSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: { email: "", password: "" },
   });
 
-  const onSubmit = async (data: LoginFormValues) => {
+  const {
+    register: registerSignup,
+    handleSubmit: handleSignupSubmit,
+    formState: { errors: signupErrors, isSubmitting: isSignupSubmitting },
+  } = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: { name: "", email: "", password: "" },
+  });
+
+  const onSignIn = async (data: LoginFormValues) => {
     await new Promise((r) => setTimeout(r, 800));
     const { email, password } = data;
 
@@ -67,7 +111,7 @@ export default function LoginPage() {
 
     if (isValid && userData) {
       login(userData, "mock_jwt_token");
-      toast({ title: "Welcome back!", description: `Identifying as ${selectedRole}...` });
+      toast({ title: "Welcome back!", description: `Signed in as ${selectedRole}` });
       
       if (selectedRole === "rider") router.push("/home");
       else if (selectedRole === "driver") router.push("/driver/dashboard");
@@ -81,144 +125,281 @@ export default function LoginPage() {
     }
   };
 
+  const onSignUp = async (data: SignupFormValues) => {
+    await new Promise((r) => setTimeout(r, 800));
+    // Mock registration success
+    toast({ title: "Registration Successful", description: "You can now sign in." });
+    setAuthMode("signin");
+  };
+
   return (
-    <MouseParallax>
-      <motion.div 
-        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-20 w-full max-w-[480px] px-6 py-12"
-      >
-        <Card className="bg-white border-none shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] rounded-[48px] p-10 lg:p-12 space-y-10 overflow-hidden relative group">
-          {/* Subtle Glow inside card */}
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-1000" />
-          
-          <div className="flex flex-col items-center text-center space-y-6 relative z-10">
-            <div className="w-16 h-16 bg-primary rounded-3xl flex items-center justify-center text-white font-bold text-3xl shadow-xl shadow-primary/20 rotate-3 hover:rotate-0 transition-transform duration-500">
+    <AuthBackground>
+      <div className="flex w-full h-full max-w-[1600px] mx-auto relative z-10">
+        {/* Left Side: Branding / Marketing (Hidden on small screens) */}
+        <div ref={container} className="hidden lg:flex flex-col justify-between w-1/2 p-16 relative text-white">
+          <div className="brand-logo flex items-center gap-4">
+            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-primary font-bold text-3xl shadow-lg">
               Z
             </div>
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-text-primary tracking-tight">Access Zipp</h1>
-              <p className="text-sm font-medium text-text-muted">Enter your secure credentials to continue.</p>
-            </div>
+            <span className="text-3xl font-bold tracking-tight">Zipp</span>
           </div>
 
-          <div className="space-y-8 relative z-10">
-            {/* Identity Switcher */}
-            <div className="grid grid-cols-3 gap-3 p-1 bg-muted/30 rounded-[24px]">
-              {ROLES.map((role) => {
-                const isSelected = selectedRole === role.id;
-                const Icon = role.icon;
-                return (
-                  <button
-                    key={role.id}
-                    onClick={() => setSelectedRole(role.id)}
-                    className={cn(
-                      "flex flex-col items-center justify-center py-4 px-2 rounded-[20px] transition-all duration-300 relative overflow-hidden",
-                      isSelected 
-                        ? "bg-white text-primary shadow-sm" 
-                        : "text-text-muted hover:text-text-primary hover:bg-white/50"
-                    )}
-                  >
-                    <Icon className={cn("w-5 h-5 mb-1.5 transition-transform", isSelected && "scale-110")} />
-                    <span className="text-[11px] font-bold uppercase tracking-widest leading-none">{role.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em] ml-4">Identifier</label>
-                  <Input
-                    {...register("email")}
-                    placeholder="name@zipp.com"
-                    className={cn(
-                      "h-14 px-6 bg-muted/40 border-none rounded-2xl font-bold focus-visible:ring-primary/20 transition-all",
-                      errors.email && "bg-danger-light/30"
-                    )}
-                  />
-                  {errors.email && <p className="text-danger text-[10px] font-bold px-4">{errors.email.message}</p>}
-                </div>
-
-                <div className="space-y-1 relative">
-                  <label className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em] ml-4">Secure Key</label>
-                  <Input
-                    {...register("password")}
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    className={cn(
-                      "h-14 px-6 bg-muted/40 border-none rounded-2xl font-bold focus-visible:ring-primary/20 transition-all",
-                      errors.password && "bg-danger-light/30"
-                    )}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-[38px] text-text-muted hover:text-primary transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                  {errors.password && <p className="text-danger text-[10px] font-bold px-4">{errors.password.message}</p>}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-center">
-                <button type="button" className="text-xs font-bold text-primary hover:text-primary/70 transition-colors uppercase tracking-widest">
-                  Authentication Issue?
-                </button>
-              </div>
-
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full h-16 bg-primary hover:bg-primary/90 text-white rounded-[24px] text-lg font-bold transition-all shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] group"
-              >
-                {isSubmitting ? (
-                  <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    Sign In
-                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
-              </Button>
-            </form>
-
-            <div className="relative py-4">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border/50"></div>
-              </div>
-              <div className="relative flex justify-center text-xs font-bold uppercase tracking-[0.3em] text-text-muted">
-                <span className="bg-white px-4">Federated Access</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" className="h-14 bg-white border-2 border-border/50 rounded-2xl hover:bg-muted/30 font-bold transition-all">
-                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z" fill="#EA4335"/>
-                </svg>
-                Google
-              </Button>
-              <Button variant="outline" className="h-14 bg-white border-2 border-border/50 rounded-2xl hover:bg-muted/30 font-bold transition-all">
-                Phone
-              </Button>
-            </div>
-
-            <p className="text-center text-xs font-bold text-text-muted mt-8 uppercase tracking-[0.1em]">
-              New to zipp?{" "}
-              <button type="button" className="text-primary hover:underline">
-                Register Identity
-              </button>
+          <div className="space-y-6 max-w-lg mb-20">
+            <h1 className="text-6xl font-bold leading-[1.1] tracking-tight">
+               <span className="inline-block overflow-hidden pb-2"><span className="gsap-word inline-block translate-y-[100%] opacity-0">Move</span></span>{" "}
+               <span className="inline-block overflow-hidden pb-2"><span className="gsap-word inline-block translate-y-[100%] opacity-0">the</span></span>{" "}
+               <span className="inline-block overflow-hidden pb-2"><span className="gsap-word inline-block translate-y-[100%] opacity-0">way</span></span>
+               <br /> 
+               <span className="inline-block overflow-hidden pt-2 pb-2"><span className="text-primary-light gsap-word inline-block translate-y-[100%] opacity-0">you want.</span></span>
+            </h1>
+            <p className="gsap-fade-up text-lg text-white/70 font-medium leading-relaxed">
+              Experience the fastest, safest, and most reliable ride-booking platform. Whether you're riding, driving, or managing operations, Zipp empowers your journey.
             </p>
+            
+            <div className="flex gap-8 pt-8 border-t border-white/10">
+              <div className="gsap-fade-up">
+                <p className="text-3xl font-bold">2M+</p>
+                <p className="text-sm text-white/50 font-medium tracking-wide uppercase mt-1">Happy Riders</p>
+              </div>
+              <div className="gsap-fade-up">
+                <p className="text-3xl font-bold">50k+</p>
+                <p className="text-sm text-white/50 font-medium tracking-wide uppercase mt-1">Active Drivers</p>
+              </div>
+            </div>
           </div>
-        </Card>
-      </motion.div>
-    </MouseParallax>
+        </div>
+
+        {/* Right Side: Auth Container */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-6 lg:p-12 relative">
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="w-full max-w-[480px] bg-white rounded-[40px] shadow-2xl overflow-hidden flex flex-col my-auto"
+          >
+            {/* Auth Mode Toggle */}
+            <div className="flex border-b border-border/40 relative">
+              <button
+                onClick={() => setAuthMode("signin")}
+                className={cn(
+                  "flex-1 py-6 text-sm font-bold uppercase tracking-widest transition-colors relative z-10",
+                  authMode === "signin" ? "text-primary" : "text-text-muted hover:text-text-primary"
+                )}
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => setAuthMode("signup")}
+                className={cn(
+                  "flex-1 py-6 text-sm font-bold uppercase tracking-widest transition-colors relative z-10",
+                  authMode === "signup" ? "text-primary" : "text-text-muted hover:text-text-primary"
+                )}
+              >
+                Create Account
+              </button>
+              
+              {/* Active Tab Indicator */}
+              <div 
+                className="absolute bottom-0 left-0 h-1 bg-primary transition-all duration-300 ease-in-out"
+                style={{
+                  width: '50%',
+                  transform: `translateX(${authMode === 'signin' ? '0%' : '100%'})`
+                }}
+              />
+            </div>
+
+            <div className="p-8 sm:p-10 space-y-8 flex-1 overflow-y-auto no-scrollbar">
+              
+              {/* Header */}
+              <div className="text-center space-y-2">
+                <h2 className="text-2xl font-bold text-text-primary">
+                  {authMode === "signin" ? "Welcome Back" : "Join Zipp Today"}
+                </h2>
+                <p className="text-sm text-text-secondary font-medium">
+                  {authMode === "signin" ? "Enter your credentials to access your account." : "Select your role and set up your profile."}
+                </p>
+              </div>
+
+              {/* Role Selection */}
+              <div className="space-y-3">
+                <label className="text-[11px] font-bold text-text-secondary uppercase tracking-[0.15em] ml-1">Select Identity</label>
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                  {ROLES.map((role) => {
+                    const isSelected = selectedRole === role.id;
+                    const Icon = role.icon;
+                    return (
+                      <button
+                        key={role.id}
+                        type="button"
+                        onClick={() => setSelectedRole(role.id)}
+                        className={cn(
+                          "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-200 relative group",
+                          isSelected 
+                            ? "bg-primary/5 border-primary shadow-sm shadow-primary/10" 
+                            : "bg-white border-border/60 hover:border-border hover:bg-muted/20"
+                        )}
+                      >
+                        {isSelected && (
+                          <div className="absolute top-2 right-2 text-primary">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          </div>
+                        )}
+                        <Icon className={cn("w-6 h-6 mb-2 transition-transform duration-300", isSelected ? "text-primary scale-110" : "text-text-muted group-hover:scale-110")} />
+                        <span className={cn("text-[11px] sm:text-xs font-bold transition-colors", isSelected ? "text-primary" : "text-text-primary")}>{role.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Forms */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={authMode}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {authMode === "signin" ? (
+                    <form onSubmit={handleLoginSubmit(onSignIn)} className="space-y-5">
+                      <div className="space-y-4 pb-4">
+                        <div className="relative">
+                          <Mail className="absolute left-4 top-[1.1rem] w-5 h-5 text-text-muted" />
+                          <Input
+                            {...registerLogin("email")}
+                            placeholder="Email address"
+                            className={cn(
+                              "h-14 pl-12 pr-4 bg-muted/40 border-none rounded-2xl font-semibold focus-visible:ring-primary/20 focus-visible:bg-white transition-all shadow-inner",
+                              loginErrors.email && "bg-danger-light/30 shadow-none"
+                            )}
+                          />
+                          {loginErrors.email && <p className="text-danger text-[10px] font-bold mt-1.5 ml-2 mr-2 absolute -bottom-5">{loginErrors.email.message}</p>}
+                        </div>
+
+                        <div className="relative pt-2">
+                          <Lock className="absolute left-4 top-[1.6rem] w-5 h-5 text-text-muted" />
+                          <Input
+                            {...registerLogin("password")}
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Password"
+                            className={cn(
+                              "h-14 pl-12 pr-12 bg-muted/40 border-none rounded-2xl font-semibold focus-visible:ring-primary/20 focus-visible:bg-white transition-all shadow-inner",
+                              loginErrors.password && "bg-danger-light/30 shadow-none"
+                            )}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-4 top-[1.6rem] text-text-muted hover:text-primary transition-colors"
+                          >
+                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          </button>
+                          {loginErrors.password && <p className="text-danger text-[10px] font-bold mt-1.5 ml-2 absolute -bottom-5">{loginErrors.password.message}</p>}
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end mt-2 pt-2">
+                        <button type="button" className="text-[11px] font-bold text-primary hover:text-primary/80 transition-colors uppercase tracking-wider">
+                          Forgot Password?
+                        </button>
+                      </div>
+
+                      <Button
+                        type="submit"
+                        disabled={isLoginSubmitting}
+                        className="w-full h-14 mt-2 bg-primary hover:bg-primary/90 text-white rounded-2xl text-base font-bold shadow-xl shadow-primary/25 transition-all hover:translate-y-[-1px] group"
+                      >
+                        {isLoginSubmitting ? (
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            Sign In
+                            <ChevronRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                          </>
+                        )}
+                      </Button>
+                    </form>
+                  ) : (
+                    <form onSubmit={handleSignupSubmit(onSignUp)} className="space-y-5">
+                      <div className="space-y-4 pb-4">
+                        <div className="relative">
+                          <User className="absolute left-4 top-[1.1rem] w-5 h-5 text-text-muted" />
+                          <Input
+                            {...registerSignup("name")}
+                            placeholder="Full Name"
+                            className={cn(
+                              "h-14 pl-12 pr-4 bg-muted/40 border-none rounded-2xl font-semibold focus-visible:ring-primary/20 focus-visible:bg-white transition-all shadow-inner",
+                              signupErrors.name && "bg-danger-light/30 shadow-none"
+                            )}
+                          />
+                          {signupErrors.name && <p className="text-danger text-[10px] font-bold mt-1.5 ml-2 absolute -bottom-5">{signupErrors.name.message}</p>}
+                        </div>
+
+                        <div className="relative pt-2">
+                          <Mail className="absolute left-4 top-[1.6rem] w-5 h-5 text-text-muted" />
+                          <Input
+                            {...registerSignup("email")}
+                            placeholder="Email address"
+                            className={cn(
+                              "h-14 pl-12 pr-4 bg-muted/40 border-none rounded-2xl font-semibold focus-visible:ring-primary/20 focus-visible:bg-white transition-all shadow-inner",
+                              signupErrors.email && "bg-danger-light/30 shadow-none"
+                            )}
+                          />
+                          {signupErrors.email && <p className="text-danger text-[10px] font-bold mt-1.5 ml-2 absolute -bottom-5">{signupErrors.email.message}</p>}
+                        </div>
+
+                        <div className="relative pt-2">
+                          <Lock className="absolute left-4 top-[1.6rem] w-5 h-5 text-text-muted" />
+                          <Input
+                            {...registerSignup("password")}
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Create Password"
+                            className={cn(
+                              "h-14 pl-12 pr-12 bg-muted/40 border-none rounded-2xl font-semibold focus-visible:ring-primary/20 focus-visible:bg-white transition-all shadow-inner",
+                              signupErrors.password && "bg-danger-light/30 shadow-none"
+                            )}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-4 top-[1.6rem] text-text-muted hover:text-primary transition-colors"
+                          >
+                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          </button>
+                          {signupErrors.password && <p className="text-danger text-[10px] font-bold mt-1.5 ml-2 absolute -bottom-5">{signupErrors.password.message}</p>}
+                        </div>
+                      </div>
+
+                      <Button
+                        type="submit"
+                        disabled={isSignupSubmitting}
+                        className="w-full h-14 mt-6 bg-text-primary hover:bg-black text-white rounded-2xl text-base font-bold shadow-xl transition-all hover:translate-y-[-1px] group"
+                      >
+                        {isSignupSubmitting ? (
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            Create Account
+                            <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                          </>
+                        )}
+                      </Button>
+                      
+                      <p className="text-center text-[10px] text-text-muted mt-4">
+                        By signing up, you agree to our <a href="#" className="font-bold underline hover:text-primary transition-colors">Terms of Service</a> and <a href="#" className="font-bold underline hover:text-primary transition-colors">Privacy Policy</a>
+                      </p>
+                    </form>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+            
+            {/* Bottom Accent */}
+            <div className="h-1.5 w-full bg-gradient-to-r from-primary via-[#9D80FF] to-primary/40 mt-auto flex-shrink-0" />
+          </motion.div>
+        </div>
+      </div>
+    </AuthBackground>
   );
 }

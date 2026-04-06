@@ -12,80 +12,73 @@ import {
   Zap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 
 const PAGE_TITLES: Record<string, string> = {
   "/home": "Overview",
   "/booking": "Trip Planner",
   "/tracking": "Live Monitor",
-  "/activity": "Your Activity",
+  "/activity": "Activity",
   "/history": "History",
   "/wallet": "Financials",
   "/profile": "Account",
-  "/ride-negotiate": "Bidding",
-  "/payment": "Settlement",
+  "/negotiate": "Negotiation",
+  "/payment": "Payment",
 };
 
 export function UserHeader() {
   const pathname = usePathname();
-  const pageTitle = PAGE_TITLES[pathname] || "Zipp Console";
+  const pageTitle = PAGE_TITLES[pathname] || "Zipp";
 
   return (
-    <header className="sticky top-0 h-24 bg-white/40 backdrop-blur-md px-12 flex items-center justify-between z-40">
-      <div className="flex items-center gap-6">
-        <h1 className="text-2xl font-bold text-text-primary tracking-tight">{pageTitle}</h1>
-        <div className="h-6 w-[1px] bg-border/40" />
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-success-light rounded-full text-success font-bold text-[10px] uppercase tracking-widest">
+    <header className="sticky top-0 h-16 bg-white/60 backdrop-blur-xl border-b border-border/30 px-8 flex items-center justify-between z-40 flex-shrink-0">
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-success/10 rounded-full">
           <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-          System Operational
+          <span className="text-success font-bold text-[10px] uppercase tracking-wider">System Online</span>
         </div>
       </div>
 
-      <div className="flex items-center space-x-8">
-        {/* Advanced Search */}
+      <div className="flex items-center gap-3">
+        {/* Search */}
         <div className="relative group hidden xl:flex items-center">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-            <Search className="w-4 h-4 text-text-muted group-focus-within:text-primary transition-colors" />
-          </div>
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary transition-colors" />
           <input
             type="text"
-            placeholder="Search trips, drivers, transactions..."
-            className="w-[320px] h-12 pl-12 pr-12 bg-white/60 border border-border/40 rounded-2xl text-xs font-medium focus:border-primary/30 focus:ring-4 focus:ring-primary/5 focus:bg-white transition-all outline-none shadow-sm"
+            placeholder="Search trips, drivers..."
+            className="w-[260px] h-10 pl-10 pr-10 bg-white/80 border border-border/40 rounded-xl text-xs font-medium focus:border-primary/30 focus:ring-2 focus:ring-primary/5 focus:bg-white transition-all outline-none"
           />
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 px-1.5 py-0.5 bg-muted rounded flex items-center gap-1 border border-border/40">
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 bg-muted rounded flex items-center gap-0.5 border border-border/30">
             <Command className="w-2.5 h-2.5 text-text-muted" />
-            <span className="text-[9px] font-bold text-text-muted uppercase">K</span>
+            <span className="text-[9px] font-bold text-text-muted">K</span>
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
-          {/* Help & Support */}
-          <button className="w-11 h-11 flex items-center justify-center hover:bg-white hover:shadow-xl hover:shadow-black/[0.02] border border-transparent hover:border-border/40 rounded-xl transition-all text-text-secondary">
-            <HelpCircle className="w-5 h-5" />
+        <div className="flex items-center gap-2">
+          <button className="w-9 h-9 flex items-center justify-center hover:bg-white hover:shadow-md border border-transparent hover:border-border/40 rounded-xl transition-all text-text-secondary">
+            <HelpCircle className="w-[18px] h-[18px]" />
           </button>
 
-          {/* Notifications */}
-          <button className="relative w-11 h-11 flex items-center justify-center hover:bg-white hover:shadow-xl hover:shadow-black/[0.02] border border-transparent hover:border-border/40 rounded-xl transition-all group">
-            <Bell className="w-5 h-5 text-text-secondary group-hover:text-primary transition-colors" />
-            <span className="absolute top-3 right-3 w-2 h-2 bg-danger rounded-full border-2 border-white shadow-sm" />
+          <button className="relative w-9 h-9 flex items-center justify-center hover:bg-white hover:shadow-md border border-transparent hover:border-border/40 rounded-xl transition-all group">
+            <Bell className="w-[18px] h-[18px] text-text-secondary group-hover:text-primary transition-colors" />
+            <span className="absolute top-2 right-2 w-2 h-2 bg-danger rounded-full border-2 border-white" />
           </button>
 
-          <div className="h-6 w-[1px] bg-border/40" />
+          <div className="h-5 w-px bg-border/40 mx-1" />
 
-          {/* Location Selector */}
-          <button className="flex items-center space-x-3 px-4 py-2 bg-white border border-border/40 rounded-xl shadow-sm hover:shadow-xl hover:shadow-black/[0.02] transition-all group">
-            <div className="w-8 h-8 bg-primary-light rounded-lg flex items-center justify-center text-primary">
-              <MapPin className="w-4 h-4" />
+          {/* Location */}
+          <button className="flex items-center gap-2.5 px-3 py-1.5 bg-white border border-border/40 rounded-xl shadow-sm hover:shadow-md transition-all group">
+            <div className="w-7 h-7 bg-primary-light rounded-lg flex items-center justify-center text-primary flex-shrink-0">
+              <MapPin className="w-3.5 h-3.5" />
             </div>
             <div className="text-left hidden sm:block">
-              <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest leading-none mb-1">Active City</p>
-              <p className="text-xs font-bold text-text-primary">Chandigarh <ChevronDown className="w-3 h-3 inline-block ml-1 opacity-40 group-hover:opacity-100 transition-opacity" /></p>
+              <p className="text-[9px] font-bold text-text-muted uppercase tracking-wider leading-none mb-0.5">Active City</p>
+              <p className="text-xs font-bold text-text-primary leading-none">Chandigarh</p>
             </div>
           </button>
 
-          {/* Quick Action - Turbo/Premium */}
-          <button className="w-11 h-11 bg-primary text-white flex items-center justify-center rounded-xl shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all hover:scale-110 active:scale-95">
-             <Zap className="w-5 h-5 fill-white" />
+          {/* Quick Action */}
+          <button className="w-9 h-9 bg-primary text-white flex items-center justify-center rounded-xl shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all hover:scale-105 active:scale-95">
+             <Zap className="w-4 h-4 fill-white" />
           </button>
         </div>
       </div>
