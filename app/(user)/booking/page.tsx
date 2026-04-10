@@ -10,6 +10,7 @@ import { MOCK_ML_PRICING } from "@/lib/mock/data";
 import { useRideStore } from "@/store/useRideStore";
 import { useNegotiationStore } from "@/store/useNegotiationStore";
 import { cn } from "@/lib/utils";
+import { RideStatus } from "@/types/ride";
 
 const UserMap = dynamic(() => import("@/components/user/UserMap"), { ssr: false });
 
@@ -69,12 +70,19 @@ export default function BookingPage() {
   const handleBooking = () => {
     const category = CATEGORIES.find(c => c.id === selectedCategory);
     if (!category) return;
+    const nowIso = new Date().toISOString();
     setRide({
       id: "ride_" + Date.now(),
-      from: "Current Location",
-      to: destination || "Ludhiana Railway Station",
-      category: category.name,
-      price: category.price,
+      userId: "user_demo",
+      type: "RIDE",
+      pickup: "Current Location",
+      dropoff: destination || "Ludhiana Railway Station",
+      distanceKm: 0,
+      etaMinutes: 0,
+      basePrice: category.price,
+      status: RideStatus.REQUESTED,
+      createdAt: nowIso,
+      updatedAt: nowIso,
     });
     initNegotiation(MOCK_ML_PRICING.suggestedPrice, MOCK_ML_PRICING.minPrice, MOCK_ML_PRICING.maxPrice);
     router.push("/negotiate");

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const token = req.cookies.get("zipp_token")?.value;
   const role = req.cookies.get("zipp_role")?.value;
   const path = req.nextUrl.pathname;
@@ -23,7 +23,7 @@ export function middleware(req: NextRequest) {
 
   // User protection (home, booking, negotiate, tracking, payment, history, ...)
   const userPaths = ["/home", "/booking", "/negotiate", "/tracking", "/payment", "/activity", "/wallet", "/profile", "/history"];
-  if (userPaths.some(p => path.startsWith(p))) {
+  if (userPaths.some((p) => path.startsWith(p))) {
     if (!token || role !== "rider") return NextResponse.redirect(new URL("/login", req.url));
   }
 
@@ -52,5 +52,5 @@ export const config = {
     "/history/:path*",
     "/driver/:path*",
     "/admin/:path*",
-  ]
+  ],
 };

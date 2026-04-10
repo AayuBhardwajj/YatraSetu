@@ -139,16 +139,18 @@ export default function TrackingPage() {
           <Card className="p-4 border-border/50 shadow-none space-y-3 bg-muted/20">
             <div className="flex flex-col space-y-0.5">
               <span className="text-[10px] text-text-muted uppercase font-bold tracking-wider">From</span>
-              <p className="text-sm font-semibold truncate">{currentRide?.from || 'Current Location'}</p>
+              <p className="text-sm font-semibold truncate">{currentRide?.pickup || "Current Location"}</p>
             </div>
             <div className="flex flex-col space-y-0.5">
               <span className="text-[10px] text-text-muted uppercase font-bold tracking-wider">To</span>
-              <p className="text-sm font-semibold truncate">{currentRide?.to || 'Railway Station'}</p>
+              <p className="text-sm font-semibold truncate">{currentRide?.dropoff || "Railway Station"}</p>
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-border/50">
               <div className="flex flex-col">
                 <span className="text-[10px] text-text-muted uppercase font-bold tracking-wider">Estimated Fare</span>
-                <p className="text-lg font-bold text-text-primary font-tabular">₹{currentRide?.price || 160}</p>
+                <p className="text-lg font-bold text-text-primary font-tabular">
+                  ₹{currentRide?.finalPrice ?? currentRide?.negotiatedPrice ?? currentRide?.basePrice ?? 160}
+                </p>
               </div>
               <div className="flex flex-col items-end">
                 <span className="text-[10px] text-text-muted uppercase font-bold tracking-wider">Payment</span>

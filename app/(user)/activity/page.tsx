@@ -103,7 +103,7 @@ export default function ActivityPage() {
                   </div>
                   <div className="space-y-1.5">
                     <span className="text-[10px] text-text-muted uppercase font-bold tracking-wider">Destination</span>
-                    <p className="text-sm font-semibold text-text-primary truncate">{currentRide.to}</p>
+                    <p className="text-sm font-semibold text-text-primary truncate">{currentRide.dropoff}</p>
                   </div>
                 </div>
 

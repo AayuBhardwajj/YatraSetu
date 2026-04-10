@@ -6,8 +6,7 @@ export const useNegotiation = () => {
   const state = useNegotiationStore();
 
   const acceptCurrentOffer = () => {
-    const price = state.driverOffer || state.userOffer;
-    state.acceptOffer(price);
+    state.acceptOffer();
   };
 
   return { ...state, acceptCurrentOffer };
