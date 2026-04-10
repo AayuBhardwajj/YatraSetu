@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { useRouter } from "next/navigation";
@@ -81,6 +81,11 @@ export default function AuthPage() {
     [selectedRole]
   );
 
+  useEffect(() => {
+    const role = new URLSearchParams(window.location.search).get("role");
+    if (role === "USER" || role === "RIDER") setSelectedRole(role);
+  }, []);
+
   const onSignIn = async (data: LoginFormValues) => {
     await new Promise((r) => setTimeout(r, 800));
     const { email, password } = data;
@@ -155,7 +160,7 @@ export default function AuthPage() {
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="w-full max-w-[480px] bg-white rounded-[40px] shadow-2xl overflow-hidden flex flex-col my-auto"
           >
-            <div className="p-8 sm:p-10 space-y-8 flex-1 overflow-y-auto no-scrollbar">
+            <div className="p-8 sm:p-10 space-y-8 flex-1">
               
               {/* Header */}
               <div className="text-center space-y-2">
@@ -308,7 +313,11 @@ export default function AuthPage() {
                 {/* Sign up link */}
                 <p className="text-center text-[11px] text-text-secondary font-semibold pt-1">
                   Don’t have an account?{" "}
-                  <button type="button" className="text-primary font-bold hover:text-primary/80 transition-colors underline underline-offset-2">
+                  <button
+                    type="button"
+                    onClick={() => router.push(selectedRole === "RIDER" ? "/signup/rider" : "/signup/driver")}
+                    className="text-primary font-bold hover:text-primary/80 transition-colors underline underline-offset-2"
+                  >
                     Sign up
                   </button>
                 </p>

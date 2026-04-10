@@ -112,7 +112,7 @@ export default function RiderSignup() {
       title: "Registration Successful!",
       description: "Welcome to Zipp. You can now sign in.",
     });
-    router.push("/login");
+    router.push("/login?role=RIDER");
   };
 
   const variants = {
@@ -195,7 +195,7 @@ export default function RiderSignup() {
             </div>
 
             {/* Form Content */}
-            <div className="flex-1 px-8 sm:px-10 py-4 overflow-y-auto no-scrollbar relative">
+            <div className="flex-1 px-8 sm:px-10 py-4 relative">
               <AnimatePresence mode="wait" custom={direction}>
                 <motion.form
                   key={step}
@@ -476,7 +476,7 @@ export default function RiderSignup() {
 
               <p className="text-center text-xs font-medium text-text-muted mt-2">
                 Already have an account?{" "}
-                <button onClick={() => router.push("/login")} className="text-primary font-bold hover:underline transition-all">Sign In</button>
+                <button onClick={() => router.push("/login?role=RIDER")} className="text-primary font-bold hover:underline transition-all">Sign In</button>
               </p>
             </div>
 

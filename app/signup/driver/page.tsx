@@ -134,7 +134,7 @@ export default function DriverSignup() {
       title: "Registration Successful!",
       description: "Driver account created. You can now sign in and wait for verification.",
     });
-    router.push("/login");
+    router.push("/login?role=USER");
   };
 
   const variants = {
@@ -215,7 +215,7 @@ export default function DriverSignup() {
             </div>
 
             {/* Form Content */}
-            <div className="flex-1 px-8 sm:px-10 py-2 overflow-y-auto no-scrollbar relative">
+            <div className="flex-1 px-8 sm:px-10 py-2 relative">
               <AnimatePresence mode="wait" custom={direction}>
                 <motion.form
                   key={step}
@@ -458,7 +458,7 @@ export default function DriverSignup() {
                 )}
               </div>
               <p className="text-center text-xs font-medium text-text-muted mt-2">
-                Already registered? <button onClick={() => router.push("/login")} className="text-primary font-bold hover:underline">Sign In</button>
+                Already registered? <button onClick={() => router.push("/login?role=USER")} className="text-primary font-bold hover:underline">Sign In</button>
               </p>
             </div>
 
