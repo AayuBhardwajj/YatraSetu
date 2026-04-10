@@ -5,12 +5,12 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: "rider" | "driver" | "admin";
+  role: "user" | "rider" | "driver" | "admin";
 }
 
 interface AuthState {
   user: User | null;
-  role: "rider" | "driver" | "admin" | null;
+  role: "user" | "rider" | "driver" | "admin" | null;
   token: string | null;
   isAuthenticated: boolean;
   login: (user: User, token: string) => void;

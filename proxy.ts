@@ -24,13 +24,14 @@ export function proxy(req: NextRequest) {
   // User protection (home, booking, negotiate, tracking, payment, history, ...)
   const userPaths = ["/home", "/booking", "/negotiate", "/tracking", "/payment", "/activity", "/wallet", "/profile", "/history"];
   if (userPaths.some((p) => path.startsWith(p))) {
-    if (!token || role !== "rider") return NextResponse.redirect(new URL("/login", req.url));
+    if (!token || (role !== "rider" && role !== "user")) return NextResponse.redirect(new URL("/login", req.url));
   }
 
   // Login redirect if already logged in
   if (path === "/login" && token && role) {
     if (role === "admin") return NextResponse.redirect(new URL("/admin/dashboard", req.url));
     if (role === "driver") return NextResponse.redirect(new URL("/driver/dashboard", req.url));
+    if (role === "user") return NextResponse.redirect(new URL("/home", req.url));
     if (role === "rider") return NextResponse.redirect(new URL("/home", req.url));
   }
 
