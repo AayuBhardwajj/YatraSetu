@@ -1,68 +1,131 @@
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useRef } from "react";
+import { gsap } from "gsap";
 import { motion, useSpring, useMotionValue, useMotionTemplate } from "framer-motion";
 
-/* Floating animated car silhouettes */
-const FloatingVehicle = ({ delay, x, y, scale, rotate }: { delay: number; x: string; y: string; scale: number; rotate: number }) => (
+/* Animated road dashes */
+const RoadDash = ({ delay, top, width }: { delay: number; top: string; width: string }) => (
+  <motion.div
+    className="absolute h-[2px] rounded-full"
+    style={{
+      top,
+      left: "-10%",
+      width,
+      background: "linear-gradient(90deg, transparent, rgba(0,210,180,0.35), transparent)",
+    }}
+    initial={{ x: "-10%" }}
+    animate={{ x: "120vw" }}
+    transition={{ duration: 7 + delay, delay, repeat: Infinity, ease: "linear" }}
+  />
+);
+
+/* Floating car SVG */
+const FloatingCar = ({ delay, top, scale }: { delay: number; top: string; scale: number }) => (
   <motion.div
     className="absolute pointer-events-none"
-    style={{ left: x, top: y }}
-    initial={{ opacity: 0, x: -30 }}
-    animate={{ opacity: [0, 0.15, 0.15, 0], x: [-30, 0, 200, 400] }}
-    transition={{ duration: 12, delay, repeat: Infinity, ease: "linear" }}
+    style={{ top, left: "-80px" }}
+    initial={{ x: -80, opacity: 0 }}
+    animate={{ x: "110vw", opacity: [0, 0.18, 0.18, 0] }}
+    transition={{ duration: 14 + delay * 2, delay, repeat: Infinity, ease: "linear" }}
   >
-    <svg width={48 * scale} height={24 * scale} viewBox="0 0 48 24" fill="none" className="text-white">
-      <path d="M8 18h4a3 3 0 006 0h8a3 3 0 006 0h4v-4l-4-8H14l-6 8v4z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-      <circle cx="14" cy="18" r="2" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="34" cy="18" r="2" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M14 10l4-4h12l4 4" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+    <svg
+      width={56 * scale}
+      height={28 * scale}
+      viewBox="0 0 56 28"
+      fill="none"
+    >
+      <rect x="8" y="10" width="40" height="12" rx="4" stroke="rgba(0,210,180,0.6)" strokeWidth="1.5" />
+      <path d="M14 10 L20 4 H36 L42 10" stroke="rgba(0,210,180,0.4)" strokeWidth="1.2" />
+      <circle cx="16" cy="22" r="3" stroke="rgba(0,210,180,0.6)" strokeWidth="1.5" />
+      <circle cx="40" cy="22" r="3" stroke="rgba(0,210,180,0.6)" strokeWidth="1.5" />
+      <rect x="44" y="13" width="6" height="3" rx="1" fill="rgba(251,191,36,0.5)" />
+      <rect x="6" y="13" width="4" height="3" rx="1" fill="rgba(251,191,36,0.3)" />
     </svg>
   </motion.div>
 );
 
-/* Road lines animation */
-const RoadLine = ({ delay, top }: { delay: number; top: string }) => (
-  <motion.div
-    className="absolute h-[2px] bg-gradient-to-r from-transparent via-white/20 to-transparent"
-    style={{ top, left: "0%", width: "40%" }}
-    initial={{ x: "-100%" }}
-    animate={{ x: "300%" }}
-    transition={{ duration: 6, delay, repeat: Infinity, ease: "linear" }}
-  />
-);
-
 /* Glowing orb */
-const GlowOrb = ({ color, size, x, y, delay }: { color: string; size: number; x: string; y: string; delay: number }) => (
+const GlowOrb = ({
+  color, size, x, y, delay,
+}: { color: string; size: number; x: string; y: string; delay: number }) => (
   <motion.div
     className="absolute rounded-full pointer-events-none"
-    style={{
-      width: size,
-      height: size,
-      left: x,
-      top: y,
-      background: color,
-      filter: `blur(${size / 2}px)`,
-    }}
-    animate={{
-      scale: [1, 1.3, 1],
-      opacity: [0.3, 0.6, 0.3],
-    }}
-    transition={{ duration: 5, delay, repeat: Infinity, ease: "easeInOut" }}
+    style={{ width: size, height: size, left: x, top: y, background: color, filter: `blur(${size / 2.2}px)` }}
+    animate={{ scale: [1, 1.25, 1], opacity: [0.25, 0.5, 0.25] }}
+    transition={{ duration: 6 + delay, delay, repeat: Infinity, ease: "easeInOut" }}
   />
 );
 
-/* Grid pattern */
-const GridPattern = () => (
-  <svg className="absolute inset-0 w-full h-full opacity-[0.03] pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+/* Dot grid */
+const DotGrid = () => (
+  <svg className="absolute inset-0 w-full h-full opacity-[0.045] pointer-events-none" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-        <path d="M 60 0 L 0 0 0 60" fill="none" stroke="white" strokeWidth="0.5" />
+      <pattern id="dots" width="40" height="40" patternUnits="userSpaceOnUse">
+        <circle cx="1" cy="1" r="1" fill="white" />
       </pattern>
     </defs>
-    <rect width="100%" height="100%" fill="url(#grid)" />
+    <rect width="100%" height="100%" fill="url(#dots)" />
   </svg>
 );
+
+/* GSAP particle canvas */
+const ParticleCanvas = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles: { x: number; y: number; r: number; alpha: number; vx: number; vy: number }[] = [];
+    for (let i = 0; i < 55; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.8 + 0.4,
+        alpha: Math.random() * 0.4 + 0.1,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
+      });
+    }
+
+    let animId: number;
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach((p) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(0,210,180,${p.alpha})`;
+        ctx.fill();
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
+      });
+      animId = requestAnimationFrame(draw);
+    };
+    draw();
+
+    const onResize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    window.addEventListener("resize", onResize);
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", onResize);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" />;
+};
 
 interface AuthBackgroundProps {
   children: React.ReactNode;
@@ -71,45 +134,46 @@ interface AuthBackgroundProps {
 export const AuthBackground: React.FC<AuthBackgroundProps> = ({ children }) => {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-
-  const springX = useSpring(mouseX, { stiffness: 40, damping: 25 });
-  const springY = useSpring(mouseY, { stiffness: 40, damping: 25 });
+  const springX = useSpring(mouseX, { stiffness: 35, damping: 22 });
+  const springY = useSpring(mouseY, { stiffness: 35, damping: 22 });
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseX.set(e.clientX);
-      mouseY.set(e.clientY);
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+    const onMove = (e: MouseEvent) => { mouseX.set(e.clientX); mouseY.set(e.clientY); };
+    window.addEventListener("mousemove", onMove);
+    return () => window.removeEventListener("mousemove", onMove);
   }, [mouseX, mouseY]);
 
-  const cursorGlow = useMotionTemplate`radial-gradient(600px circle at ${springX}px ${springY}px, rgba(108, 71, 255, 0.08), transparent 70%)`;
+  const cursorGlow = useMotionTemplate`radial-gradient(520px circle at ${springX}px ${springY}px, rgba(0,210,180,0.07), transparent 65%)`;
 
   return (
-    <div className="relative w-full min-h-screen overflow-hidden bg-[#07070F] flex">
-      {/* Base gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0a0a1a] via-[#07070F] to-[#100a20]" />
+    <div className="relative w-full min-h-screen overflow-hidden flex" style={{ background: "#060D1F" }}>
+      {/* Base gradient layers */}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #060D1F 0%, #0A1628 50%, #060D1F 100%)" }} />
+      <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 80% 60% at 20% 50%, rgba(0,210,180,0.06) 0%, transparent 60%)" }} />
+      <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 80% at 80% 30%, rgba(99,102,241,0.08) 0%, transparent 60%)" }} />
 
-      {/* Grid */}
-      <GridPattern />
+      {/* Dot grid */}
+      <DotGrid />
 
-      {/* Animated orbs */}
-      <GlowOrb color="rgba(108, 71, 255, 0.4)" size={400} x="10%" y="20%" delay={0} />
-      <GlowOrb color="rgba(0, 200, 83, 0.2)" size={300} x="70%" y="60%" delay={2} />
-      <GlowOrb color="rgba(108, 71, 255, 0.15)" size={500} x="50%" y="80%" delay={4} />
+      {/* Particle canvas */}
+      <ParticleCanvas />
 
-      {/* Road lines */}
-      <RoadLine delay={0} top="30%" />
-      <RoadLine delay={2} top="50%" />
-      <RoadLine delay={4} top="70%" />
+      {/* Glow orbs */}
+      <GlowOrb color="rgba(0,210,180,0.35)" size={380} x="5%" y="15%" delay={0} />
+      <GlowOrb color="rgba(99,102,241,0.25)" size={320} x="65%" y="55%" delay={2.5} />
+      <GlowOrb color="rgba(251,191,36,0.12)" size={260} x="45%" y="75%" delay={5} />
 
-      {/* Floating vehicles */}
-      <FloatingVehicle delay={0} x="5%" y="25%" scale={1} rotate={0} />
-      <FloatingVehicle delay={4} x="15%" y="55%" scale={0.8} rotate={0} />
-      <FloatingVehicle delay={8} x="10%" y="75%" scale={1.2} rotate={0} />
+      {/* Road dashes */}
+      <RoadDash delay={0} top="28%" width="35%" />
+      <RoadDash delay={2.5} top="52%" width="28%" />
+      <RoadDash delay={5} top="72%" width="40%" />
 
-      {/* Cursor glow follower */}
+      {/* Floating cars */}
+      <FloatingCar delay={0} top="22%" scale={1} />
+      <FloatingCar delay={5} top="50%" scale={0.75} />
+      <FloatingCar delay={10} top="70%" scale={1.1} />
+
+      {/* Cursor glow */}
       <motion.div className="absolute inset-0 pointer-events-none" style={{ background: cursorGlow }} />
 
       {/* Content */}
