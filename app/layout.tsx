@@ -16,13 +16,17 @@ export const metadata: Metadata = {
   description: "Production-grade ride and delivery platform"
 };
 
+import AuthProvider from "@/components/providers/AuthProvider";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={inter.variable}>
       <body className="font-sans antialiased bg-background text-foreground min-h-screen">
         <QueryProvider>
-          {children}
-          <Toaster />
+          <AuthProvider>
+            {children}
+            <Toaster />
+          </AuthProvider>
         </QueryProvider>
       </body>
     </html>

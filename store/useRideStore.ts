@@ -1,12 +1,5 @@
 import { create } from "zustand";
-
-interface Ride {
-  id: string;
-  from: string;
-  to: string;
-  category: string;
-  price: number;
-}
+import type { Ride } from "@/types/ride";
 
 interface RideStore {
   currentRide: Ride | null;
