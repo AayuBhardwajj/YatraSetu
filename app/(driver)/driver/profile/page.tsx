@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
   User, 
@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/useAuthStore";
+import { createClient } from "@/lib/supabase/client";
 
 export default function DriverProfilePage() {
   const router = useRouter();
@@ -35,15 +36,50 @@ export default function DriverProfilePage() {
     window.location.href = "/login";
   };
 
+  const supabase = createClient();
   const [formData, setFormData] = useState({
-    name: "Rajesh Kumar",
-    email: "rajesh.k@zipp.com",
-    phone: "+91 98765 43210",
+    name: "Loading...",
+    email: "Loading...",
+    phone: "",
     language: "Hindi, English",
     bankName: "HDFC Bank",
     accountNo: "•••• •••• 4231",
     ifsc: "HDFC0001234"
   });
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    async function loadDriver() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setFormData(prev => ({ ...prev, email: user.email || prev.email }));
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+        if (profile) {
+          setFormData(prev => ({
+            ...prev,
+            name: profile.full_name || user.user_metadata?.full_name || prev.name,
+            phone: profile.phone || prev.phone
+          }));
+        }
+      }
+    }
+    loadDriver();
+  }, []);
+
+  const saveProfile = async () => {
+    setIsSaving(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from('profiles').update({
+        phone: formData.phone
+      }).eq('id', user.id);
+      
+      await supabase.auth.updateUser({
+        data: { full_name: formData.name }
+      });
+    }
+    setIsSaving(false);
+  };
 
   return (
     <div className="min-h-[calc(100vh-64px)] w-full bg-muted/30 flex justify-center p-8 overflow-y-auto no-scrollbar">
@@ -177,8 +213,8 @@ export default function DriverProfilePage() {
                 <LogOut className="w-4 h-4" />
                 <span>Sign Out</span>
               </Button>
-              <Button className="h-12 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl px-10 shadow-lg shadow-primary/10 transition-all active:scale-[0.98]">
-                Save Profile
+              <Button onClick={saveProfile} disabled={isSaving} className="h-12 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl px-10 shadow-lg shadow-primary/10 transition-all active:scale-[0.98]">
+                {isSaving ? "Saving..." : "Save Profile"}
               </Button>
             </div>
           </Card>

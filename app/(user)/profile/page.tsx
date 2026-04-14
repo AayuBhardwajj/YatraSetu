@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
   User as UserIcon, 
@@ -30,16 +30,55 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/useAuthStore";
+import { createClient } from "@/lib/supabase/client";
 
 export default function ProfilePage() {
   const router = useRouter();
+  const supabase = createClient();
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [profile, setProfile] = useState({
-    name: "Arjun Sharma",
-    email: "arjun.sharma@zipp.com",
-    phone: "+91 98765 43210",
-    location: "Chandigarh, India"
+    name: "Loading...",
+    email: "Loading...",
+    phone: "",
+    location: ""
   });
+
+  useEffect(() => {
+    async function loadProfile() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setProfile(prev => ({ ...prev, email: user.email || prev.email }));
+        const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+        if (data) {
+          setProfile({
+            name: data.full_name || user.user_metadata?.full_name || '',
+            email: user.email || '',
+            phone: data.phone || '',
+            location: data.city || ''
+          });
+        }
+      }
+    }
+    loadProfile();
+  }, []);
+
+  const saveProfile = async () => {
+    setIsSaving(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from('profiles').update({
+        phone: profile.phone,
+        city: profile.location
+      }).eq('id', user.id);
+      
+      await supabase.auth.updateUser({
+        data: { full_name: profile.name }
+      });
+    }
+    setIsSaving(false);
+    setIsEditing(false);
+  };
 
   const { logout } = useAuthStore();
 
@@ -145,10 +184,14 @@ export default function ProfilePage() {
               </h3>
               <Button 
                 variant="ghost" 
-                onClick={() => setIsEditing(!isEditing)}
+                onClick={() => {
+                  if (isEditing) saveProfile();
+                  else setIsEditing(true);
+                }}
+                disabled={isSaving}
                 className={cn("h-9 rounded-xl px-4 font-bold transition-all text-sm", isEditing ? "bg-success/10 text-success hover:bg-success/10" : "bg-primary-light text-primary hover:bg-primary-light")}
               >
-                {isEditing ? <><Check className="w-3.5 h-3.5 mr-1.5" /> Save</> : <><Edit2 className="w-3.5 h-3.5 mr-1.5" /> Edit</>}
+                {isEditing ? <>{isSaving ? "Saving..." : <><Check className="w-3.5 h-3.5 mr-1.5" /> Save</>}</> : <><Edit2 className="w-3.5 h-3.5 mr-1.5" /> Edit</>}
               </Button>
             </div>
 

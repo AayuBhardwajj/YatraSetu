@@ -81,14 +81,14 @@ export default function AuthPage() {
     }
 
     toast({ title: "Welcome back!", description: `Signed in as ${selectedRoleLabel}` });
-    router.push(selectedRole === "USER" ? "/dashboard" : "/driver/dashboard");
+    router.push(selectedRole === "USER" ? "/home" : "/driver/dashboard");
   };
 
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${selectedRole === "USER" ? "/dashboard" : "/driver/dashboard"}`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${selectedRole === "USER" ? "/home" : "/driver/dashboard"}`,
       },
     });
 

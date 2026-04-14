@@ -120,8 +120,8 @@ export default function UserSignup() {
 
       if (profileError) throw profileError;
 
-      toast({ title: "Account Created!", description: "Welcome to Zipp. Redirecting to dashboard..." });
-      router.push("/dashboard");
+      toast({ title: "Account Created!", description: "Welcome to Zipp. Redirecting to home..." });
+      router.push("/home");
 
     } catch (error: any) {
       toast({ variant: "destructive", title: "Signup Failed", description: error.message });
