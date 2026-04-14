@@ -12,7 +12,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import axios from "axios";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 
 const userSignupSchema = z.object({
@@ -97,26 +96,26 @@ export default function UserSignup() {
       let avatarUrl = "";
       // 2. Optional Photo Upload
       if (profilePhoto) {
-        // Need signature
-        const { data: signData } = await axios.post("/api/upload/signature", {
-          userId,
-          docType: 'avatar',
-          fileHash: `avatar-${Date.now()}` // Mock hash for now
+        const res = await fetch("/api/cloudinary/sign", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ docType: "avatar" }),
         });
-        
+        const signData = await res.json();
         const uploadResult = await uploadToCloudinary(profilePhoto, signData);
-        avatarUrl = uploadResult.public_id;
+        avatarUrl = uploadResult.secure_url;
       }
 
-      // 3. Update Profiles Table (Trigger might handle it, but we update city/phone)
-       const { error: profileError } = await supabase
-        .from("profiles")
+      // 3. Update user_profiles (trigger created the row, we fill in the rest)
+      const { error: profileError } = await supabase
+        .from("user_profiles")
         .update({
-          phone: data.phone,
+          phone: data.phone || null,
           city: data.city,
-          avatar_url: avatarUrl
+          avatar_url: avatarUrl || null,
+          is_profile_complete: true,
         })
-        .eq("id", userId);
+        .eq("user_id", userId);
 
       if (profileError) throw profileError;
 

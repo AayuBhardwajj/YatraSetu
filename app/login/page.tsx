@@ -85,10 +85,12 @@ export default function AuthPage() {
   };
 
   const handleGoogleLogin = async () => {
+    const role = selectedRole === 'DRIVER' ? 'driver' : 'user';
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${selectedRole === "USER" ? "/home" : "/driver/dashboard"}`,
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: { role },
       },
     });
 

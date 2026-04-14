@@ -1,49 +1,36 @@
-import axios from 'axios';
-
-/**
- * Resolves a Cloudinary public ID or URL into an optimized CDN URL.
- */
-export function resolveMediaUrl(publicId: string | null | undefined): string {
-  if (!publicId) return '';
-  
-  // If it's already a full URL, return it
-  if (publicId.startsWith('http')) return publicId;
-
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  
-  // Basic optimization: f_auto (format), q_auto (quality), w_auto/dpr_auto
-  return `https://res.cloudinary.com/${cloudName}/image/upload/f_auto,q_auto,w_800/dpr_auto/${publicId}`;
+export function resolveMediaUrl(publicIdOrUrl: string | null | undefined): string {
+  if (!publicIdOrUrl) return ''
+  if (publicIdOrUrl.startsWith('http')) return publicIdOrUrl
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+  return `https://res.cloudinary.com/${cloudName}/image/upload/f_auto,q_auto,w_800/${publicIdOrUrl}`
 }
 
-/**
- * Uploads a file directly to Cloudinary using a pre-signed signature.
- */
 export async function uploadToCloudinary(
   file: File,
-  signaturePayload: {
-    signature: string;
-    timestamp: number;
-    cloudName: string;
-    apiKey: string;
-    public_id: string;
-    folder: string;
+  signPayload: {
+    signature: string
+    timestamp: number
+    cloudName: string
+    apiKey: string
+    public_id: string
+    folder: string
   }
-) {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('signature', signaturePayload.signature);
-  formData.append('timestamp', signaturePayload.timestamp.toString());
-  formData.append('api_key', signaturePayload.apiKey);
-  formData.append('public_id', signaturePayload.public_id);
-  formData.append('folder', signaturePayload.folder);
+): Promise<{ public_id: string; secure_url: string }> {
+  const form = new FormData()
+  form.append('file', file)
+  form.append('signature', signPayload.signature)
+  form.append('timestamp', String(signPayload.timestamp))
+  form.append('api_key', signPayload.apiKey)
+  form.append('public_id', signPayload.public_id)
+  form.append('folder', signPayload.folder)
 
-  const response = await axios.post(
-    `https://api.cloudinary.com/v1_1/${signaturePayload.cloudName}/image/upload`,
-    formData
-  );
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${signPayload.cloudName}/image/upload`,
+    { method: 'POST', body: form }
+  )
 
-  return {
-    public_id: response.data.public_id,
-    secure_url: response.data.secure_url,
-  };
+  if (!res.ok) throw new Error('Cloudinary upload failed')
+
+  const data = await res.json()
+  return { public_id: data.public_id, secure_url: data.secure_url }
 }

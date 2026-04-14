@@ -17,7 +17,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import axios from "axios";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 
 const driverSignupSchema = z.object({
@@ -122,46 +121,49 @@ export default function DriverSignup() {
       if (!driverId) throw new Error("Driver ID not found");
 
       // 2. Profile & Driver Table (Profiles is auto-trigger'd, but we update)
-       await supabase.from("profiles").update({ phone: data.phone, city: data.city }).eq("id", driverId);
-       
-       const { error: driverError } = await supabase.from("drivers").insert({
-         id: driverId,
-         payment_method: data.paymentMethod,
-         is_available: data.isAvailable,
-         status: 'pending'
-       });
-       if (driverError) throw driverError;
+       await supabase.from("driver_profiles").update({ phone: data.phone, city: data.city }).eq("user_id", driverId);
 
       // 3. Document Upload Pipeline
       for (const type of DOC_TYPES) {
         const file = files[type];
         if (file) {
-           const { data: signData } = await axios.post("/api/upload/signature", {
-            userId: driverId,
-            docType: type,
-            fileHash: `${type}-${file.size}-${file.lastModified}`
+          const res = await fetch("/api/cloudinary/sign", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ docType: type }),
           });
-          
+          const signData = await res.json();
           const uploadResult = await uploadToCloudinary(file, signData);
           
           await supabase.from("driver_documents").insert({
             driver_id: driverId,
             doc_type: type,
-            cloudinary_public_id: uploadResult.public_id,
-            cloudinary_url: uploadResult.secure_url
+            file_url: uploadResult.secure_url,
+            cloudinary_id: uploadResult.public_id,
           });
         }
       }
 
       // 4. Vehicle Data
-      await supabase.from("driver_vehicles").insert({
+      await supabase.from("vehicles").insert({
         driver_id: driverId,
+        vehicle_type: data.vehicleType,
         make: data.vehicleMake,
         model: data.vehicleModel,
         year: parseInt(data.year),
         plate_number: data.plateNumber,
-        vehicle_type: data.vehicleType
       });
+
+      // 5. Mark onboarding complete
+      await supabase.from("driver_profiles").update({
+        aadhaar_number: data.aadhaarNumber,
+        pan_number: data.panNumber,
+        dl_number: data.dlNumber,
+        upi_id: data.paymentMethod,
+        vehicle_type: data.vehicleType,
+        is_available: data.isAvailable,
+        is_onboarding_complete: true,
+      }).eq("user_id", driverId);
 
       toast({ title: "Registration Submitted!", description: "Your details are under review. Redirecting..." });
       router.push("/driver/dashboard");

@@ -1,16 +1,19 @@
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-import { Session, User } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/client";
+import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
+import { Session, User } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/client'
+import type { UserProfile, DriverProfile, UserRole } from '@/types/user'
 
 interface AuthState {
-  user: User | null;
-  session: Session | null;
-  role: "user" | "driver" | null;
-  isLoading: boolean;
-  setSession: (session: Session | null) => Promise<void>;
-  signOut: () => Promise<void>;
-  fetchProfile: () => Promise<void>;
+  user: User | null
+  session: Session | null
+  role: UserRole | null
+  userProfile: UserProfile | null
+  driverProfile: DriverProfile | null
+  isLoading: boolean
+  setSession: (session: Session | null) => Promise<void>
+  signOut: () => Promise<void>
+  fetchProfile: () => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -19,47 +22,53 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       session: null,
       role: null,
+      userProfile: null,
+      driverProfile: null,
       isLoading: true,
-      
+
       setSession: async (session) => {
-        set({ session, user: session?.user ?? null, isLoading: true });
+        set({ session, user: session?.user ?? null, isLoading: true })
         if (session) {
-          await get().fetchProfile();
+          await get().fetchProfile()
         } else {
-          set({ role: null, isLoading: false });
+          set({ role: null, userProfile: null, driverProfile: null, isLoading: false })
+        }
+      },
+
+      fetchProfile: async () => {
+        const { user } = get()
+        if (!user) return set({ isLoading: false })
+
+        const role = user.user_metadata?.role as UserRole | undefined
+        const supabase = createClient()
+
+        if (role === 'driver') {
+          const { data } = await supabase
+            .from('driver_profiles')
+            .select('*')
+            .eq('user_id', user.id)
+            .single()
+          set({ role: 'driver', driverProfile: data, isLoading: false })
+        } else {
+          const { data } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('user_id', user.id)
+            .single()
+          set({ role: 'user', userProfile: data, isLoading: false })
         }
       },
 
       signOut: async () => {
-        const supabase = createClient();
-        await supabase.auth.signOut();
-        set({ user: null, session: null, role: null, isAuthenticated: false } as any);
-        // Clear legacy cookies if any
-        document.cookie = "zipp_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-        document.cookie = "zipp_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      },
-
-      fetchProfile: async () => {
-        const session = get().session;
-        if (!session) return;
-
-        const supabase = createClient();
-        const { data: profile, error } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .single();
-
-        if (profile) {
-          set({ role: profile.role, isLoading: false });
-        } else {
-          set({ isLoading: false });
-        }
+        const supabase = createClient()
+        await supabase.auth.signOut()
+        set({ user: null, session: null, role: null, userProfile: null, driverProfile: null })
       },
     }),
     {
-      name: "zipp-auth-storage",
+      name: 'zipp-auth-storage',
       storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({ role: state.role }),
     }
   )
-);
+)
