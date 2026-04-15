@@ -14,11 +14,19 @@ export async function GET(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.redirect(`${origin}/login?error=no_user`)
 
+  // ✅ New Fix: Extract role from URL and sync to permanent user metadata
+  // This ensures the first redirect and future logins have the correct role.
+  let role = searchParams.get('role') as 'user' | 'driver' | null
+  if (role) {
+    await supabase.auth.updateUser({ data: { role } })
+  } else {
+    // Fallback to existing metadata if not in URL
+    role = user.user_metadata?.role as 'user' | 'driver' | undefined
+  }
+
   const baseUrl = process.env.NODE_ENV === 'development'
     ? origin
     : `https://${request.headers.get('x-forwarded-host') ?? new URL(origin).host}`
-
-  const role = user.user_metadata?.role as 'user' | 'driver' | undefined
 
   if (role === 'driver') {
     const { data } = await supabase

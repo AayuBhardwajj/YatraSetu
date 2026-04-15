@@ -43,8 +43,22 @@ export default function DriverProfilePage() {
     const supabase = createClient()
 
     await Promise.all([
-      supabase.from('driver_profiles').update({ phone: form.phone, full_name: form.name }).eq('user_id', user.id),
-      supabase.auth.updateUser({ data: { full_name: form.name } }),
+      // 1. Update the driver-specific record
+      supabase.from('driver_profiles').update({ 
+        phone: form.phone, 
+        full_name: form.name 
+      }).eq('user_id', user.id),
+      
+      // 2. Update the base user profile record
+      supabase.from('user_profiles').update({ 
+        phone: form.phone, 
+        full_name: form.name 
+      }).eq('user_id', user.id),
+      
+      // 3. Update auth metadata for session consistency
+      supabase.auth.updateUser({ 
+        data: { full_name: form.name } 
+      }),
     ])
 
     // Optimistic update — no re-fetch needed

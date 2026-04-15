@@ -68,7 +68,7 @@ export default function DriverOnboardingPage() {
         .from('driver_profiles')
         .select('onboarding_step, full_name, phone, city, aadhaar_number, pan_number, dl_number, upi_id, bank_account, bank_ifsc, vehicle_type, is_available')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle()
         .then(({ data }) => {
           if (!data) return
           if (data.onboarding_step > 1) setStep(data.onboarding_step)
@@ -88,10 +88,15 @@ export default function DriverOnboardingPage() {
 
   const persistStep = async (nextStep: number, patch: Partial<FormValues> = {}) => {
     if (!user) return
-    await supabase
+    const { error } = await supabase
       .from('driver_profiles')
-      .update({ ...patch, onboarding_step: nextStep })
-      .eq('user_id', user.id)
+      .upsert({ 
+        user_id: user.id,
+        ...patch, 
+        onboarding_step: nextStep 
+      }, { onConflict: 'user_id' })
+    
+    if (error) console.error('Failed to persist step:', error)
   }
 
   const fieldMap: Record<number, (keyof FormValues)[]> = {
