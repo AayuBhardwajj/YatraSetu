@@ -1,7 +1,10 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, MapPin, Navigation2, Info, Bike, Car, ChevronRight, LocateFixed, X, ArrowUpDown } from "lucide-react";
+import {
+  MapPin, Info, Bike, Car,
+  LocateFixed, X, ArrowUpDown, Clock, Loader2, Search,
+} from "lucide-react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,64 +14,142 @@ import { useRideStore } from "@/store/useRideStore";
 import { useNegotiationStore } from "@/store/useNegotiationStore";
 import { cn } from "@/lib/utils";
 import { RideStatus } from "@/types/ride";
+import {
+  useDestinationSearch,
+  getRecentSearches,
+  saveRecentSearch,
+  type DestinationSuggestion,
+} from "@/hooks/useDestinationSearch";
 
 const UserMap = dynamic(() => import("@/components/user/UserMap"), { ssr: false });
 
+/* ─── Constants ─────────────────────────────────────────────────────────── */
 const CATEGORIES = [
-  { id: "bike", name: "Bike", icon: Bike, price: 45, time: "~8 min" },
-  { id: "auto", name: "Auto", icon: Car, price: 89, time: "~10 min" },
-  { id: "mini", name: "Mini", icon: Car, price: 130, time: "~12 min" },
-  { id: "sedan", name: "Sedan", icon: Car, price: 180, time: "~14 min" },
+  { id: "bike",  name: "Bike",  icon: Bike, price: 45,  time: "~8 min"  },
+  { id: "auto",  name: "Auto",  icon: Car,  price: 89,  time: "~10 min" },
+  { id: "mini",  name: "Mini",  icon: Car,  price: 130, time: "~12 min" },
+  { id: "sedan", name: "Sedan", icon: Car,  price: 180, time: "~14 min" },
 ];
 
 interface Driver { id: string; lat: number; lng: number; }
 
+/* ─── Component ─────────────────────────────────────────────────────────── */
 export default function BookingPage() {
   const [selectedCategory, setSelectedCategory] = useState("mini");
-  const [destination, setDestination] = useState("");
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [userPos, setUserPos] = useState<[number, number] | null>(null);
+  const [isLoaded,         setIsLoaded]         = useState(false);
+  const [drivers,          setDrivers]           = useState<Driver[]>([]);
+  const [userPos,          setUserPos]           = useState<[number, number] | null>(null);
+
+  // Destination search UI state
+  const [query,       setQuery]       = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<
+    { name: string; lat: number; lng: number }[]
+  >([]);
+  const inputRef     = useRef<HTMLInputElement>(null);
+  const dropdownRef  = useRef<HTMLDivElement>(null);
+
   const router = useRouter();
-  const { setRide } = useRideStore();
+  const { setRide, destinationName, destinationCoords, setDestinationName, setDestinationCoords } = useRideStore();
   const { initNegotiation } = useNegotiationStore();
 
+  /* ── Nominatim live search ─────────────────────────────────────────────── */
+  const { suggestions, isLoading, error } = useDestinationSearch(query, {
+    userLat: userPos?.[0],
+    userLng: userPos?.[1],
+    limit: 5,
+  });
+
+  /* ── Init ──────────────────────────────────────────────────────────────── */
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoaded(true), 100);
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => setIsLoaded(true), 100);
+    return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {
-    navigator.geolocation?.getCurrentPosition((pos) => {
-      const { latitude: lat, longitude: lng } = pos.coords;
-      setUserPos([lat, lng]);
-    });
+    setRecentSearches(getRecentSearches());
   }, []);
 
-  // Generate alive-feeling drivers near user
+  /* ── Geolocation ───────────────────────────────────────────────────────── */
+  useEffect(() => {
+    navigator.geolocation?.getCurrentPosition((pos) =>
+      setUserPos([pos.coords.latitude, pos.coords.longitude])
+    );
+  }, []);
+
+  /* ── Simulated drivers ─────────────────────────────────────────────────── */
   useEffect(() => {
     if (!userPos) return;
     const [lat, lng] = userPos;
     const base: Driver[] = [
-      { id: 'd1', lat: lat + 0.003, lng: lng + 0.002 },
-      { id: 'd2', lat: lat - 0.002, lng: lng + 0.004 },
-      { id: 'd3', lat: lat + 0.001, lng: lng - 0.003 },
+      { id: "d1", lat: lat + 0.003, lng: lng + 0.002 },
+      { id: "d2", lat: lat - 0.002, lng: lng + 0.004 },
+      { id: "d3", lat: lat + 0.001, lng: lng - 0.003 },
     ];
     setDrivers(base);
-
-    const interval = setInterval(() => {
-      setDrivers(base.map(d => ({
+    const interval = setInterval(() =>
+      setDrivers(base.map((d) => ({
         ...d,
         lat: d.lat + (Math.random() - 0.5) * 0.0003,
         lng: d.lng + (Math.random() - 0.5) * 0.0003,
-      })));
-    }, 3000);
-
+      }))), 3000
+    );
     return () => clearInterval(interval);
   }, [userPos]);
 
+  /* ── Click-outside dismissal ───────────────────────────────────────────── */
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (
+        dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
+        inputRef.current   && !inputRef.current.contains(e.target as Node)
+      ) setShowDropdown(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  /* ── Show dropdown when typing ─────────────────────────────────────────── */
+  useEffect(() => {
+    if (query.trim()) setShowDropdown(true);
+  }, [query]);
+
+  /* ── Handlers ──────────────────────────────────────────────────────────── */
+  const handleSelect = (item: DestinationSuggestion) => {
+    setDestinationName(item.primary);
+    setDestinationCoords({ lat: item.lat, lng: item.lng });
+    setQuery(item.primary);
+    setShowDropdown(false);
+    saveRecentSearch({ name: item.primary, lat: item.lat, lng: item.lng });
+    setRecentSearches(getRecentSearches());
+  };
+
+  const handleSelectRecent = (r: { name: string; lat: number; lng: number }) => {
+    setDestinationName(r.name);
+    setDestinationCoords({ lat: r.lat, lng: r.lng });
+    setQuery(r.name);
+    setShowDropdown(false);
+  };
+
+  const handleClear = () => {
+    setQuery("");
+    setDestinationName("");
+    setDestinationCoords(null);
+    setShowDropdown(false);
+    inputRef.current?.focus();
+  };
+
+  const handleUseCurrentLocation = () => {
+    if (!userPos) return;
+    const [lat, lng] = userPos;
+    setDestinationName("Current Location");
+    setDestinationCoords({ lat, lng });
+    setQuery("Current Location");
+    setShowDropdown(false);
+  };
+
   const handleBooking = () => {
-    const category = CATEGORIES.find(c => c.id === selectedCategory);
+    const category = CATEGORIES.find((c) => c.id === selectedCategory);
     if (!category) return;
     const nowIso = new Date().toISOString();
     setRide({
@@ -76,7 +157,7 @@ export default function BookingPage() {
       userId: "user_demo",
       type: "RIDE",
       pickup: "Current Location",
-      dropoff: destination || "Ludhiana Railway Station",
+      dropoff: destinationName || query || "Unknown Destination",
       distanceKm: 0,
       etaMinutes: 0,
       basePrice: category.price,
@@ -88,31 +169,42 @@ export default function BookingPage() {
     router.push("/negotiate");
   };
 
+  /* ── Dropdown content ──────────────────────────────────────────────────── */
+  const showRecents  = !query.trim() && recentSearches.length > 0;
+  const showResults  = !!query.trim();
+  const dropdownOpen = showDropdown && (showRecents || showResults);
+
+  /* ── Render ────────────────────────────────────────────────────────────── */
   return (
     <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden bg-background">
-      {/* Left Column: Map */}
+      {/* ── Left: Map ──────────────────────────────────────────────────────── */}
       <div className="flex-[3] h-full relative border-r border-border/50 min-w-0">
-        <UserMap height="100%" drivers={drivers} />
+        <UserMap
+          height="100%"
+          drivers={drivers}
+          destinationCoords={destinationCoords}
+        />
 
-        {/* Route Indicators */}
+        {/* Route pill badges */}
         <div className="absolute top-5 left-5 z-[1000] flex flex-col space-y-2">
           <div className="bg-white/95 backdrop-blur-sm px-4 py-2.5 rounded-full shadow-md border border-border/50 flex items-center space-x-2">
             <div className="w-2.5 h-2.5 bg-success rounded-full flex-shrink-0" />
             <span className="text-sm font-semibold truncate">Current Location</span>
           </div>
-          {destination && (
-            <div className="bg-white/95 backdrop-blur-sm px-4 py-2.5 rounded-full shadow-md border border-border/50 flex items-center space-x-2 animate-in slide-in-from-top-2">
+          {destinationName && (
+            <div className="bg-white/95 backdrop-blur-sm px-4 py-2.5 rounded-full shadow-md border border-border/50 flex items-center space-x-2 animate-in slide-in-from-top-2 duration-300">
               <div className="w-2.5 h-2.5 bg-danger rounded-full flex-shrink-0" />
-              <span className="text-sm font-semibold truncate">{destination}</span>
+              <span className="text-sm font-semibold truncate max-w-[180px]">{destinationName}</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Right Column: Content */}
+      {/* ── Right: Booking Panel ───────────────────────────────────────────── */}
       <div className="flex-[2] h-full bg-white overflow-y-auto no-scrollbar min-w-[340px] max-w-[440px]">
         <div className="p-6 space-y-7">
-          {/* Route Inputs */}
+
+          {/* ── Route Inputs ─────────────────────────────────────────────── */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-text-primary">Plan your trip</h2>
@@ -120,8 +212,11 @@ export default function BookingPage() {
                 <ArrowUpDown className="w-3.5 h-3.5 mr-1.5" />Swap
               </Button>
             </div>
+
             <Card className="p-5 border-border/50 shadow-none space-y-3.5 relative">
               <div className="absolute left-[30px] top-[48px] bottom-[48px] w-0.5 border-l-2 border-dashed border-border" />
+
+              {/* Pickup */}
               <div className="flex items-center space-x-3.5">
                 <div className="w-3.5 h-3.5 rounded-full bg-success ring-4 ring-success/10 flex-shrink-0" />
                 <div className="flex-1 flex items-center bg-muted/50 rounded-xl px-4 h-11">
@@ -131,27 +226,125 @@ export default function BookingPage() {
                   </Button>
                 </div>
               </div>
-              <div className="flex items-center space-x-3.5">
+
+              {/* Destination */}
+              <div className="flex items-center space-x-3.5 relative">
                 <div className="w-3.5 h-3.5 rounded-full bg-danger ring-4 ring-danger/10 flex-shrink-0" />
-                <div className="flex-1 flex items-center bg-white border border-primary/50 rounded-xl px-4 h-11 ring-2 ring-primary/10">
-                  <input
-                    autoFocus
-                    placeholder="Enter destination"
-                    value={destination}
-                    onChange={(e) => setDestination(e.target.value)}
-                    className="bg-transparent border-none outline-none text-sm font-medium text-text-primary w-full h-full"
-                  />
-                  {destination && (
-                    <Button variant="ghost" size="icon" className="ml-auto text-text-muted hover:text-text-primary h-8 w-8" onClick={() => setDestination("")}>
-                      <X className="w-3.5 h-3.5" />
-                    </Button>
+                <div className="relative flex-1">
+                  <div
+                    className={cn(
+                      "flex items-center bg-white border rounded-xl px-4 h-11 transition-all duration-200",
+                      dropdownOpen
+                        ? "border-primary ring-2 ring-primary/15 rounded-b-none border-b-transparent"
+                        : "border-primary/50 ring-2 ring-primary/10"
+                    )}
+                  >
+                    <Search className="w-3.5 h-3.5 text-text-muted mr-2 flex-shrink-0" />
+                    <input
+                      ref={inputRef}
+                      autoFocus
+                      autoComplete="off"
+                      spellCheck={false}
+                      placeholder="Enter destination"
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      onFocus={() => setShowDropdown(true)}
+                      className="bg-transparent border-none outline-none text-sm font-medium text-text-primary w-full h-full placeholder:text-text-muted"
+                    />
+                    {isLoading && (
+                      <Loader2 className="w-3.5 h-3.5 text-primary animate-spin flex-shrink-0 ml-1" />
+                    )}
+                    {query && !isLoading && (
+                      <Button
+                        variant="ghost" size="icon"
+                        className="ml-auto text-text-muted hover:text-text-primary h-8 w-8 flex-shrink-0"
+                        onClick={handleClear}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* ── Dropdown ─────────────────────────────────────────── */}
+                  {dropdownOpen && (
+                    <div
+                      ref={dropdownRef}
+                      className="absolute left-0 right-0 top-full z-[2000] bg-white border border-primary/50 border-t-0 rounded-b-xl shadow-xl overflow-hidden"
+                      style={{ maxHeight: "288px", overflowY: "auto" }}
+                    >
+                      {/* Use current location */}
+                      <button
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-primary-light/60 transition-colors text-left border-b border-border/40 group"
+                        onClick={handleUseCurrentLocation}
+                      >
+                        <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20">
+                          <LocateFixed className="w-3.5 h-3.5 text-primary" />
+                        </span>
+                        <span className="text-sm font-semibold text-primary">Use current location</span>
+                      </button>
+
+                      {/* Recent searches (shown when input empty) */}
+                      {showRecents && !query.trim() && (
+                        <>
+                          <div className="px-4 pt-2.5 pb-1">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Recent</p>
+                          </div>
+                          {recentSearches.map((r) => (
+                            <button
+                              key={r.name}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/60 transition-colors text-left"
+                              onClick={() => handleSelectRecent(r)}
+                            >
+                              <span className="flex-shrink-0 w-7 h-7 rounded-full bg-muted flex items-center justify-center">
+                                <Clock className="w-3.5 h-3.5 text-text-muted" />
+                              </span>
+                              <span className="text-sm font-medium text-text-primary truncate">{r.name}</span>
+                            </button>
+                          ))}
+                        </>
+                      )}
+
+                      {/* Live results */}
+                      {showResults && !isLoading && suggestions.length === 0 && !error && (
+                        <div className="px-4 py-5 text-center">
+                          <p className="text-sm text-text-muted">No results found for "<span className="font-semibold text-text-primary">{query}</span>"</p>
+                        </div>
+                      )}
+
+                      {showResults && error && (
+                        <div className="px-4 py-4 text-center">
+                          <p className="text-sm text-danger">{error}</p>
+                        </div>
+                      )}
+
+                      {showResults && suggestions.map((s, i) => (
+                        <button
+                          key={s.id}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-4 py-3 hover:bg-primary-light/50 transition-colors text-left group",
+                            i < suggestions.length - 1 && "border-b border-border/30"
+                          )}
+                          onClick={() => handleSelect(s)}
+                        >
+                          <span className="flex-shrink-0 w-7 h-7 rounded-full bg-danger/10 flex items-center justify-center group-hover:bg-danger/20 transition-colors">
+                            <MapPin className="w-3.5 h-3.5 text-danger" />
+                          </span>
+                          <span className="min-w-0">
+                            <p className="text-sm font-semibold text-text-primary truncate">{s.primary}</p>
+                            {s.secondary && (
+                              <p className="text-[11px] text-text-muted truncate mt-0.5">{s.secondary}</p>
+                            )}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
             </Card>
           </section>
 
-          {/* Ride Categories */}
+          {/* ── Ride Categories ────────────────────────────────────────────── */}
           <section className="space-y-3">
             <h2 className="text-lg font-bold text-text-primary">Choose your ride</h2>
             <div className="grid grid-cols-2 gap-3">
@@ -164,7 +357,9 @@ export default function BookingPage() {
                     onClick={() => setSelectedCategory(cat.id)}
                     className={cn(
                       "flex flex-col items-center justify-center p-5 rounded-2xl border transition-all space-y-2.5",
-                      isSelected ? "bg-primary-light border-2 border-primary/40 shadow-sm" : "bg-white border-border hover:border-primary/30"
+                      isSelected
+                        ? "bg-primary-light border-2 border-primary/40 shadow-sm"
+                        : "bg-white border-border hover:border-primary/30"
                     )}
                   >
                     <div className={cn("p-2.5 rounded-full", isSelected ? "bg-primary text-white" : "bg-muted text-primary")}>
@@ -181,9 +376,9 @@ export default function BookingPage() {
             </div>
           </section>
 
-          {/* ML Price Card */}
+          {/* ── ML Price Card ─────────────────────────────────────────────── */}
           {isLoaded && (
-            <section className="  duration-200">
+            <section className="duration-200">
               <Card className="p-5 bg-primary-light border-l-4 border-l-primary border-y-0 border-r-0 rounded-none rounded-r-xl space-y-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
@@ -203,10 +398,18 @@ export default function BookingPage() {
                   ))}
                 </div>
                 <div className="flex flex-col space-y-2.5 pt-1">
-                  <Button onClick={handleBooking} className="w-full h-12 bg-primary hover:bg-primary/90 text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20">
+                  <Button
+                    onClick={handleBooking}
+                    disabled={!destinationName && !query}
+                    className="w-full h-12 bg-primary hover:bg-primary/90 text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     Accept ₹{MOCK_ML_PRICING.suggestedPrice}
                   </Button>
-                  <Button variant="outline" onClick={() => router.push("/negotiate")} className="w-full h-12 border-primary text-primary hover:bg-primary hover:text-white rounded-xl text-sm font-semibold transition-all">
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push("/negotiate")}
+                    className="w-full h-12 border-primary text-primary hover:bg-primary hover:text-white rounded-xl text-sm font-semibold transition-all"
+                  >
                     Negotiate Price
                   </Button>
                 </div>
