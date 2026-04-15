@@ -11,10 +11,15 @@ interface AuthState {
   userProfile: UserProfile | null
   driverProfile: DriverProfile | null
   isLoading: boolean
+  profileFetchedAt: number | null
   setSession: (session: Session | null) => Promise<void>
+  fetchProfile: (force?: boolean) => Promise<void>
+  updateUserProfile: (patch: Partial<UserProfile>) => void
+  updateDriverProfile: (patch: Partial<DriverProfile>) => void
   signOut: () => Promise<void>
-  fetchProfile: () => Promise<void>
 }
+
+const PROFILE_TTL_MS = 10 * 60 * 1000 // 10 minutes
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -25,50 +30,88 @@ export const useAuthStore = create<AuthState>()(
       userProfile: null,
       driverProfile: null,
       isLoading: true,
+      profileFetchedAt: null,
 
       setSession: async (session) => {
-        set({ session, user: session?.user ?? null, isLoading: true })
-        if (session) {
-          await get().fetchProfile()
-        } else {
-          set({ role: null, userProfile: null, driverProfile: null, isLoading: false })
+        const prevUserId = get().user?.id
+        const nextUserId = session?.user?.id
+        set({ session, user: session?.user ?? null })
+
+        if (!session) {
+          set({ role: null, userProfile: null, driverProfile: null, isLoading: false, profileFetchedAt: null })
+          return
         }
+
+        // Force re-fetch only when the logged-in user changes
+        const force = prevUserId !== nextUserId
+        await get().fetchProfile(force)
       },
 
-      fetchProfile: async () => {
-        const { user } = get()
+      fetchProfile: async (force = false) => {
+        const { user, profileFetchedAt, userProfile, driverProfile } = get()
         if (!user) return set({ isLoading: false })
 
+        // Cache hit: skip network call if data is fresh
+        const isFresh = profileFetchedAt !== null && Date.now() - profileFetchedAt < PROFILE_TTL_MS
+        const hasCached = userProfile !== null || driverProfile !== null
+        if (!force && isFresh && hasCached) {
+          set({ isLoading: false })
+          return
+        }
+
+        set({ isLoading: true })
         const role = user.user_metadata?.role as UserRole | undefined
         const supabase = createClient()
 
         if (role === 'driver') {
           const { data } = await supabase
             .from('driver_profiles')
-            .select('*')
+            .select('user_id, full_name, phone, city, vehicle_type, is_available, is_verified, onboarding_step, is_onboarding_complete')
             .eq('user_id', user.id)
             .maybeSingle()
-          set({ role: 'driver', driverProfile: data, isLoading: false })
+          set({ role: 'driver', driverProfile: data, isLoading: false, profileFetchedAt: Date.now() })
         } else {
           const { data } = await supabase
             .from('user_profiles')
-            .select('*')
+            .select('user_id, email, full_name, phone, role, avatar_url, is_profile_complete')
             .eq('user_id', user.id)
             .maybeSingle()
-          set({ role: 'user', userProfile: data, isLoading: false })
+          set({ role: 'user', userProfile: data, isLoading: false, profileFetchedAt: Date.now() })
         }
+      },
+
+      // Optimistic local update — no re-fetch needed after a save
+      updateUserProfile: (patch) => {
+        const current = get().userProfile
+        if (current) set({ userProfile: { ...current, ...patch }, profileFetchedAt: Date.now() })
+      },
+
+      updateDriverProfile: (patch) => {
+        const current = get().driverProfile
+        if (current) set({ driverProfile: { ...current, ...patch }, profileFetchedAt: Date.now() })
       },
 
       signOut: async () => {
         const supabase = createClient()
         await supabase.auth.signOut()
-        set({ user: null, session: null, role: null, userProfile: null, driverProfile: null })
+        set({
+          user: null, session: null, role: null,
+          userProfile: null, driverProfile: null,
+          isLoading: false, profileFetchedAt: null,
+        })
       },
     }),
     {
-      name: 'zipp-auth-storage',
+      name: 'zipp-auth-v2',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ role: state.role }),
+      // Persist profile so it's available instantly on next page load (no flash)
+      partialize: (state) => ({
+        role: state.role,
+        user: state.user,
+        userProfile: state.userProfile,
+        driverProfile: state.driverProfile,
+        profileFetchedAt: state.profileFetchedAt,
+      }),
     }
   )
 )

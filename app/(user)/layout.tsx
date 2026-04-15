@@ -1,25 +1,29 @@
-"use client";
+'use client'
 
-import React from "react";
-import { UserSidebar } from "@/components/user/UserSidebar";
-import { UserHeader } from "@/components/user/UserHeader";
+import React, { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { UserSidebar } from '@/components/user/UserSidebar'
+import { UserHeader } from '@/components/user/UserHeader'
+
+const PREFETCH_ROUTES = ['/home', '/booking', '/activity', '/wallet', '/profile', '/tracking']
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+
+  // Prefetch all user routes on layout mount — makes every nav click instant
+  useEffect(() => {
+    PREFETCH_ROUTES.forEach((route) => router.prefetch(route))
+  }, [router])
+
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Fixed Sidebar */}
       <UserSidebar />
-
-      {/* Main Content Area — offset by sidebar width + sidebar margins */}
       <div className="flex-1 flex flex-col ml-[290px] min-h-screen">
-        {/* Sticky Header */}
         <UserHeader />
-
-        {/* Dynamic Page Content */}
         <main className="flex-1 overflow-x-hidden">
           {children}
         </main>
       </div>
     </div>
-  );
+  )
 }

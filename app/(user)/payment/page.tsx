@@ -48,7 +48,7 @@ export default function PaymentPage() {
 
   return (
     <div className="min-h-[calc(100vh-64px)] w-full bg-muted/20 flex items-start justify-center p-6 overflow-y-auto no-scrollbar">
-      <div className="w-full max-w-[560px] space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="w-full max-w-[560px] space-y-6   duration-200">
         
         {/* Header */}
         <div className="text-center space-y-1.5">

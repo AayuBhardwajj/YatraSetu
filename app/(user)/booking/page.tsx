@@ -183,7 +183,7 @@ export default function BookingPage() {
 
           {/* ML Price Card */}
           {isLoaded && (
-            <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <section className="  duration-200">
               <Card className="p-5 bg-primary-light border-l-4 border-l-primary border-y-0 border-r-0 rounded-none rounded-r-xl space-y-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">

@@ -63,7 +63,7 @@ export default function DriverDashboard() {
         {/* Floating Stats Row */}
         <div className="absolute top-6 left-6 right-6 z-10 grid grid-cols-3 gap-6">
           {STATS.map((stat, i) => (
-            <Card key={i} className="p-4 bg-white/90 backdrop-blur-md border-border shadow-xl rounded-2xl flex items-center space-x-4 animate-in slide-in-from-top-4 duration-500 delay-100">
+            <Card key={i} className="p-4 bg-white/90 backdrop-blur-md border-border shadow-xl rounded-2xl flex items-center space-x-4 animate-in slide-in-from-top-4 duration-200 delay-100">
               <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shadow-inner", stat.bg)}>
                 <stat.icon className={cn("w-6 h-6", stat.color)} />
               </div>
@@ -77,7 +77,7 @@ export default function DriverDashboard() {
 
         {/* Floating "New Request" Card */}
         {showRequest && (
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 w-[400px] animate-in slide-in-from-bottom-10 fade-in duration-500 zoom-in-95">
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 w-[400px] animate-in slide-in-from-bottom-10 fade-in duration-200 zoom-in-95">
             <Card className="p-0 border-2 border-primary bg-white rounded-3xl shadow-2xl overflow-hidden">
               <div className="p-6 space-y-6">
                 <div className="flex items-center justify-between">

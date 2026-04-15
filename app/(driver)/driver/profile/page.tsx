@@ -1,104 +1,97 @@
-"use client";
+'use client'
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Star, 
-  Car, 
-  ShieldCheck, 
-  ShieldAlert,
-  LogOut,
-  Camera,
-  Globe,
-  Building2,
-  CreditCard,
-  ChevronRight
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/store/useAuthStore";
-import { createClient } from "@/lib/supabase/client";
+import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import {
+  User, Mail, Phone, Star, Car, ShieldCheck,
+  LogOut, Camera, Globe, Building2, CreditCard, ChevronRight,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/store/useAuthStore'
+import { createClient } from '@/lib/supabase/client'
 
 export default function DriverProfilePage() {
-  const router = useRouter();
-  
-  const { logout } = useAuthStore();
+  const router = useRouter()
+  const { user, driverProfile, updateDriverProfile, signOut, isLoading } = useAuthStore()
+  const [isSaving, setIsSaving] = useState(false)
+  const [form, setForm] = useState({
+    name: '', email: '', phone: '',
+    language: 'Hindi, English',
+    bankName: 'HDFC Bank', accountNo: '•••• •••• 4231', ifsc: 'HDFC0001234',
+  })
 
-  const handleLogout = () => {
-    logout();
-    window.location.href = "/login";
-  };
-
-  const supabase = createClient();
-  const [formData, setFormData] = useState({
-    name: "Loading...",
-    email: "Loading...",
-    phone: "",
-    language: "Hindi, English",
-    bankName: "HDFC Bank",
-    accountNo: "•••• •••• 4231",
-    ifsc: "HDFC0001234"
-  });
-  const [isSaving, setIsSaving] = useState(false);
-
+  // Populate from cached store — zero Supabase calls on mount
   useEffect(() => {
-    async function loadDriver() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setFormData(prev => ({ ...prev, email: user.email || prev.email }));
-        const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-        if (profile) {
-          setFormData(prev => ({
-            ...prev,
-            name: profile.full_name || user.user_metadata?.full_name || prev.name,
-            phone: profile.phone || prev.phone
-          }));
-        }
-      }
+    if (user || driverProfile) {
+      setForm(prev => ({
+        ...prev,
+        name: driverProfile?.full_name || user?.user_metadata?.full_name || '',
+        email: user?.email || '',
+        phone: driverProfile?.phone || '',
+      }))
     }
-    loadDriver();
-  }, []);
+  }, [user, driverProfile])
 
   const saveProfile = async () => {
-    setIsSaving(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await supabase.from('profiles').update({
-        phone: formData.phone
-      }).eq('id', user.id);
-      
-      await supabase.auth.updateUser({
-        data: { full_name: formData.name }
-      });
-    }
-    setIsSaving(false);
-  };
+    if (!user) return
+    setIsSaving(true)
+    const supabase = createClient()
+
+    await Promise.all([
+      supabase.from('driver_profiles').update({ phone: form.phone, full_name: form.name }).eq('user_id', user.id),
+      supabase.auth.updateUser({ data: { full_name: form.name } }),
+    ])
+
+    // Optimistic update — no re-fetch needed
+    updateDriverProfile({ full_name: form.name, phone: form.phone })
+    setIsSaving(false)
+  }
+
+  const handleLogout = async () => {
+    await signOut()
+    router.push('/login')
+  }
+
+  const displayName = form.name || 'Driver'
+  const initials = displayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+
+  if (isLoading && !driverProfile) {
+    return (
+      <div className="min-h-[calc(100vh-64px)] w-full bg-muted/30 flex justify-center p-8">
+        <div className="w-full max-w-[900px] grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="lg:col-span-5 space-y-6">
+            <Skeleton className="h-[320px] rounded-[32px]" />
+            <Skeleton className="h-[160px] rounded-[32px]" />
+          </div>
+          <div className="lg:col-span-7">
+            <Skeleton className="h-[480px] rounded-[32px]" />
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-[calc(100vh-64px)] w-full bg-muted/30 flex justify-center p-8 overflow-y-auto no-scrollbar">
-      <div className="w-full max-w-[900px] grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        
-        {/* Left Column (40%): Driver & Vehicle Info */}
+      <div className="w-full max-w-[900px] grid grid-cols-1 lg:grid-cols-12 gap-8">
+
         <div className="lg:col-span-5 space-y-6">
           <Card className="p-8 border-none bg-white rounded-[32px] shadow-xl shadow-black/5 flex flex-col items-center text-center space-y-6">
             <div className="relative">
               <div className="w-32 h-32 bg-primary-light rounded-[40px] flex items-center justify-center text-primary text-4xl font-bold border-4 border-white shadow-xl">
-                RK
+                {initials}
               </div>
               <button className="absolute bottom-0 right-0 p-2.5 bg-white rounded-2xl shadow-lg border border-border text-text-muted hover:text-primary transition-colors">
                 <Camera className="w-5 h-5" />
               </button>
             </div>
-            
             <div className="space-y-1">
-              <h2 className="text-2xl font-bold text-text-primary tracking-tight">{formData.name}</h2>
+              <h2 className="text-2xl font-bold text-text-primary tracking-tight">{displayName}</h2>
               <div className="flex items-center justify-center space-x-2">
                 <div className="flex items-center text-warning font-bold">
                   <Star className="w-4 h-4 mr-1 fill-warning" />
@@ -108,7 +101,6 @@ export default function DriverProfilePage() {
                 <span className="text-xs font-bold text-text-muted uppercase tracking-widest">Premium Driver</span>
               </div>
             </div>
-
             <Badge className="bg-success-light text-success border-transparent px-6 py-1.5 rounded-full font-bold flex items-center space-x-2">
               <ShieldCheck className="w-4 h-4" />
               <span>Identity Verified</span>
@@ -122,8 +114,10 @@ export default function DriverProfilePage() {
                 <Car className="w-6 h-6" />
               </div>
               <div className="space-y-1">
-                <p className="text-lg font-bold text-text-primary leading-none">Toyota Camry</p>
-                <p className="text-sm font-medium text-text-muted">PB 65 AC 1234 · White</p>
+                <p className="text-lg font-bold text-text-primary leading-none">
+                  {driverProfile?.vehicle_type ? `${driverProfile.vehicle_type.charAt(0).toUpperCase()}${driverProfile.vehicle_type.slice(1)}` : 'Vehicle'}
+                </p>
+                <p className="text-sm font-medium text-text-muted">Registered & Active</p>
               </div>
             </div>
             <div className="pt-4 border-t border-border flex items-center justify-between">
@@ -136,7 +130,6 @@ export default function DriverProfilePage() {
           </Card>
         </div>
 
-        {/* Right Column (60%): Forms */}
         <div className="lg:col-span-7 space-y-6">
           <Card className="p-8 border-none bg-white rounded-[32px] shadow-xl shadow-black/5 space-y-8">
             <div className="space-y-6">
@@ -146,33 +139,21 @@ export default function DriverProfilePage() {
                   <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest pl-1">Phone Number</label>
                   <div className="relative">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                    <Input 
-                      value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      className="pl-11 h-12 bg-muted/40 border-none rounded-xl font-medium focus-visible:ring-primary/20"
-                    />
+                    <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="pl-11 h-12 bg-muted/40 border-none rounded-xl font-medium focus-visible:ring-primary/20" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest pl-1">Email Address</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                    <Input 
-                      value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="pl-11 h-12 bg-muted/40 border-none rounded-xl font-medium focus-visible:ring-primary/20"
-                    />
+                    <Input value={form.email} disabled className="pl-11 h-12 bg-muted/40 border-none rounded-xl font-medium opacity-100" />
                   </div>
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest pl-1">Preferred Languages</label>
                   <div className="relative">
                     <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                    <Input 
-                      value={formData.language}
-                      onChange={(e) => setFormData({...formData, language: e.target.value})}
-                      className="pl-11 h-12 bg-muted/40 border-none rounded-xl font-medium focus-visible:ring-primary/20"
-                    />
+                    <Input value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value })} className="pl-11 h-12 bg-muted/40 border-none rounded-xl font-medium focus-visible:ring-primary/20" />
                   </div>
                 </div>
               </div>
@@ -185,36 +166,26 @@ export default function DriverProfilePage() {
                   <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest pl-1">Bank Name</label>
                   <div className="relative">
                     <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                    <Input 
-                      value={formData.bankName}
-                      className="pl-11 h-12 bg-muted/40 border-none rounded-xl font-medium"
-                    />
+                    <Input value={form.bankName} onChange={(e) => setForm({ ...form, bankName: e.target.value })} className="pl-11 h-12 bg-muted/40 border-none rounded-xl font-medium" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest pl-1">Account Number</label>
                   <div className="relative">
                     <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                    <Input 
-                      value={formData.accountNo}
-                      className="pl-11 h-12 bg-muted/40 border-none rounded-xl font-medium"
-                    />
+                    <Input value={form.accountNo} onChange={(e) => setForm({ ...form, accountNo: e.target.value })} className="pl-11 h-12 bg-muted/40 border-none rounded-xl font-medium" />
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center justify-between pt-6">
-              <Button 
-                onClick={handleLogout}
-                variant="outline" 
-                className="h-12 border-danger/20 text-danger hover:bg-danger-light hover:border-danger/40 font-bold rounded-xl space-x-2 transition-all px-8"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Sign Out</span>
+              <Button onClick={handleLogout} variant="outline" className="h-12 border-danger/20 text-danger hover:bg-danger-light hover:border-danger/40 font-bold rounded-xl space-x-2 transition-all px-8">
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
               </Button>
               <Button onClick={saveProfile} disabled={isSaving} className="h-12 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl px-10 shadow-lg shadow-primary/10 transition-all active:scale-[0.98]">
-                {isSaving ? "Saving..." : "Save Profile"}
+                {isSaving ? 'Saving...' : 'Save Profile'}
               </Button>
             </div>
           </Card>
@@ -235,5 +206,5 @@ export default function DriverProfilePage() {
 
       </div>
     </div>
-  );
+  )
 }

@@ -44,7 +44,7 @@ export default function DriverEarningsPage() {
 
   return (
     <div className="min-h-[calc(100vh-64px)] w-full bg-muted/30 flex justify-center p-8 overflow-y-auto no-scrollbar">
-      <div className="w-full max-w-[1000px] space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="w-full max-w-[1000px] space-y-8   duration-200">
         
         <div className="flex items-center justify-between">
           <h1 className="text-[28px] font-bold text-text-primary underline decoration-success/20 underline-offset-8">Earnings</h1>
@@ -94,7 +94,7 @@ export default function DriverEarningsPage() {
                       </div>
                     </div>
                     <div 
-                      className="w-full bg-white/20 group-hover/bar:bg-white/40 transition-all duration-500 rounded-t-lg"
+                      className="w-full bg-white/20 group-hover/bar:bg-white/40 transition-all duration-200 rounded-t-lg"
                       style={{ height: stat.height }}
                     />
                   </div>

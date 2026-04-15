@@ -56,7 +56,7 @@ export default function DriverActiveRidePage() {
         
         {/* Navigation Overlays */}
         <div className="absolute top-8 left-8 right-8 z-10 flex flex-col space-y-4">
-          <Card className="p-6 bg-primary/95 backdrop-blur-md text-white border-none shadow-2xl rounded-[32px] flex items-center justify-between animate-in slide-in-from-top-4 duration-500">
+          <Card className="p-6 bg-primary/95 backdrop-blur-md text-white border-none shadow-2xl rounded-[32px] flex items-center justify-between animate-in slide-in-from-top-4 duration-200">
             <div className="flex items-center space-x-6">
               <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
                 <Navigation className="w-10 h-10 transform -rotate-45" />

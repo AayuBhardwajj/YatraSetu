@@ -45,7 +45,7 @@ export default function ActivityPage() {
 
   return (
     <div className="min-h-[calc(100vh-64px)] w-full bg-muted/20 flex justify-center p-6 overflow-y-auto no-scrollbar">
-      <div className="w-full max-w-[800px] space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="w-full max-w-[800px] space-y-6   duration-200">
         
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-text-primary">Activity</h1>

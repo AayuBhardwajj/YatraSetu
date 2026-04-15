@@ -1,26 +1,31 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import { cn } from "@/lib/utils";
-import QueryProvider from "@/components/providers/QueryProvider";
-import { Toaster } from "@/components/ui/Toaster";
+import type { Metadata, Viewport } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+import QueryProvider from '@/components/providers/QueryProvider'
+import { Toaster } from '@/components/ui/Toaster'
+import AuthProvider from '@/components/providers/AuthProvider'
 
-const inter = Inter({ 
-  subsets: ["latin"], 
-  variable: "--font-inter",
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
   display: 'swap',
-});
+  preload: true,
+})
 
 export const metadata: Metadata = {
-  title: "Zipp — Your City, On Demand",
-  description: "Production-grade ride and delivery platform"
-};
+  title: 'Zipp — Your City, On Demand',
+  description: 'Production-grade ride and delivery platform',
+}
 
-import AuthProvider from "@/components/providers/AuthProvider";
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#6C47FF',
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={inter.variable} data-scroll-behavior="smooth">
       <body className="font-sans antialiased bg-background text-foreground min-h-screen">
         <QueryProvider>
           <AuthProvider>
@@ -30,5 +35,5 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </QueryProvider>
       </body>
     </html>
-  );
+  )
 }

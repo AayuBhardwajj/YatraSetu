@@ -72,7 +72,7 @@ export default function AdminLiveMapPage() {
       </div>
 
       {/* Right Sidebar Overlay */}
-      <aside className="absolute right-8 top-8 bottom-8 w-[400px] z-10 flex flex-col gap-6 animate-in slide-in-from-right-10 duration-700">
+      <aside className="absolute right-8 top-8 bottom-8 w-[400px] z-10 flex flex-col gap-6 animate-in slide-in-from-right-10 duration-200">
         
         {/* Search & Intelligence */}
         <Card className="p-6 border-none bg-white/90 backdrop-blur-2xl rounded-[32px] shadow-2xl space-y-6">

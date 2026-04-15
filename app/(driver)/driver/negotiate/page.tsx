@@ -36,7 +36,7 @@ export default function DriverNegotiatePage() {
 
   return (
     <div className="min-h-[calc(100vh-64px)] w-full bg-muted/30 flex items-start justify-center p-8 overflow-y-auto no-scrollbar">
-      <div className="w-full max-w-[600px] space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="w-full max-w-[600px] space-y-8   duration-200">
         
         {/* Navigation Header */}
         <div className="flex items-center justify-between">

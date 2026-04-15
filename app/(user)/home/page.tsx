@@ -4,8 +4,12 @@ import { useRouter } from "next/navigation";
 import { Search, Clock, ChevronRight, Car, Package, Key, MapPin } from "lucide-react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/useAuthStore";
 
-const UserMap = dynamic(() => import("@/components/user/UserMap"), { ssr: false });
+const UserMap = dynamic(
+  () => import("@/components/user/UserMap"),
+  { ssr: false, loading: () => <div className="w-full h-full bg-muted animate-pulse" /> }
+);
 
 const SERVICES = [
   { id: "ride", title: "Book a Ride", subtitle: "Cars & autos", icon: Car, href: "/booking" },
@@ -26,6 +30,8 @@ export default function UserHomePage() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [userPos, setUserPos] = useState<[number, number] | null>(null);
   const router = useRouter();
+  const { userProfile } = useAuthStore();
+  const city = (userProfile as any)?.city || 'Your City';
 
   // Get user position once to seed driver dots
   useEffect(() => {
@@ -69,7 +75,7 @@ export default function UserHomePage() {
         <div className="absolute top-5 left-5 z-[1000]">
           <div className="flex items-center space-x-2 bg-white/95 backdrop-blur-sm px-4 py-2.5 rounded-full shadow-md border border-border/50">
             <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-            <span className="text-sm font-semibold text-text-primary">Chandigarh, Punjab</span>
+            <span className="text-sm font-semibold text-text-primary">{city}</span>
           </div>
         </div>
 

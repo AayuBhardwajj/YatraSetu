@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
+import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabase/client'
 import { uploadToCloudinary } from '@/lib/cloudinary'
 import { cn } from '@/lib/utils'
@@ -51,6 +52,7 @@ export default function DriverOnboardingPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
+  const { user, updateDriverProfile } = useAuthStore()
   const supabase = createClient()
 
   const { register, handleSubmit, trigger, watch, setValue, formState: { errors } } = useForm<FormValues>({
@@ -61,9 +63,8 @@ export default function DriverOnboardingPage() {
 
   // Resume from saved onboarding_step
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return
-      supabase
+    if (!user) return
+    supabase
         .from('driver_profiles')
         .select('onboarding_step, full_name, phone, city, aadhaar_number, pan_number, dl_number, upi_id, bank_account, bank_ifsc, vehicle_type, is_available')
         .eq('user_id', user.id)
@@ -83,11 +84,9 @@ export default function DriverOnboardingPage() {
           if (data.vehicle_type) setValue('vehicle_type', data.vehicle_type)
           if (typeof data.is_available === 'boolean') setValue('is_available', data.is_available)
         })
-    })
-  }, [])
+  }, [user])
 
   const persistStep = async (nextStep: number, patch: Partial<FormValues> = {}) => {
-    const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     await supabase
       .from('driver_profiles')
@@ -138,7 +137,6 @@ export default function DriverOnboardingPage() {
   const onSubmit = async (data: FormValues) => {
     setLoading(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
       // Upload documents
@@ -193,6 +191,9 @@ export default function DriverOnboardingPage() {
         .eq('user_id', user.id)
 
       if (error) throw error
+
+      // Optimistic store update
+      updateDriverProfile({ is_onboarding_complete: true, city: data.city, is_available: data.is_available })
 
       toast({ title: 'Application submitted!', description: 'Redirecting to your dashboard...' })
       router.push('/driver/dashboard')

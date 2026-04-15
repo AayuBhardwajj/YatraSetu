@@ -176,7 +176,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </main>
 
         {/* Floating System Notification (Subtle) */}
-        <div className="absolute bottom-8 right-8 z-40 animate-in slide-in-from-right-10 duration-700">
+        <div className="absolute bottom-8 right-8 z-40 animate-in slide-in-from-right-10 duration-200">
           <div className="bg-white/90 backdrop-blur-md border border-border/50 px-6 py-4 rounded-[28px] shadow-2xl flex items-center gap-4">
             <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
               <ShieldCheck className="w-6 h-6" />

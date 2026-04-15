@@ -40,7 +40,7 @@ const CARDS = [
 
 export default function WalletPage() {
   return (
-    <div className="max-w-[1100px] mx-auto p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="max-w-[1100px] mx-auto p-8 space-y-8   duration-200">
       
       {/* Header Section */}
       <div className="flex items-center justify-between flex-wrap gap-4">

@@ -45,7 +45,7 @@ const REVENUE_DATA = [
 
 export default function AdminAnalyticsPage() {
   return (
-    <div className="space-y-10 max-w-[1400px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-10 max-w-[1400px] mx-auto   duration-200">
       
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -142,7 +142,7 @@ export default function AdminAnalyticsPage() {
                     </div>
                   </div>
                   <div 
-                    className="w-full bg-muted/40 group-hover/chart:bg-primary transition-all duration-700 rounded-t-2xl relative"
+                    className="w-full bg-muted/40 group-hover/chart:bg-primary transition-all duration-200 rounded-t-2xl relative"
                     style={{ height: data.height }}
                   >
                     <div className="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent opacity-0 group-hover/chart:opacity-100 transition-opacity" />

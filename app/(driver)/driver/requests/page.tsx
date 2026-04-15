@@ -130,7 +130,7 @@ export default function DriverRequestsPage() {
           
           {/* Route Details Overlay */}
           {selectedRequest && (
-            <div className="absolute top-6 left-6 right-6 z-10 animate-in slide-in-from-top-4 duration-500">
+            <div className="absolute top-6 left-6 right-6 z-10 animate-in slide-in-from-top-4 duration-200">
               <Card className="p-6 bg-white/90 backdrop-blur-md border-border shadow-xl rounded-2xl flex items-center justify-between">
                 <div className="space-y-1">
                   <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Route Estimate</span>
@@ -162,7 +162,7 @@ export default function DriverRequestsPage() {
 
         {/* Selected Request Info Footer */}
         {selectedRequest && (
-          <div className="h-[280px] bg-white border-t border-border p-8 space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+          <div className="h-[280px] bg-white border-t border-border p-8 space-y-6 animate-in  duration-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-primary-light rounded-2xl flex items-center justify-center text-primary font-bold text-lg shadow-sm">
@@ -236,7 +236,7 @@ function RequestItem({ request, isSelected, onSelect, onAccept, onDecline }: any
     <Card 
       onClick={onSelect}
       className={cn(
-        "relative overflow-hidden border-2 transition-all cursor-pointer group rounded-2xl animate-in slide-in-from-left-4 duration-500",
+        "relative overflow-hidden border-2 transition-all cursor-pointer group rounded-2xl animate-in slide-in-from-left-4 duration-200",
         isSelected ? "border-primary shadow-xl shadow-primary/5 bg-white" : "border-transparent bg-muted/40 hover:bg-muted/60"
       )}
     >

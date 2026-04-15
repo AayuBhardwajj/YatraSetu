@@ -10,6 +10,7 @@ import { User, Phone, MapPin, Camera, ChevronRight, ChevronLeft, CheckCircle2, L
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
+import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabase/client'
 import { uploadToCloudinary } from '@/lib/cloudinary'
 import { cn } from '@/lib/utils'
@@ -32,6 +33,7 @@ export default function UserOnboardingPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
+  const { user, updateUserProfile } = useAuthStore()
   const supabase = createClient()
 
   const { register, handleSubmit, trigger, formState: { errors } } = useForm<FormValues>({
@@ -58,7 +60,6 @@ export default function UserOnboardingPage() {
   const onSubmit = async (data: FormValues) => {
     setLoading(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
       let avatar_url = ''
@@ -87,7 +88,8 @@ export default function UserOnboardingPage() {
 
       if (error) throw error
 
-      toast({ title: 'Profile complete!', description: 'Welcome to Zipp 🎉' })
+      // Optimistic update so sidebar/header reflect name instantly
+      updateUserProfile({ full_name: data.full_name, is_profile_complete: true })
       router.push('/home')
     } catch (err: any) {
       toast({ variant: 'destructive', title: 'Error', description: err.message })

@@ -57,7 +57,7 @@ export default function AdminDriversPage() {
   });
 
   return (
-    <div className="space-y-10 max-w-[1400px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-10 max-w-[1400px] mx-auto   duration-200">
       
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
