@@ -6,6 +6,7 @@
 DROP TRIGGER  IF EXISTS on_auth_user_created      ON auth.users;
 DROP TRIGGER  IF EXISTS trg_user_profiles_updated_at   ON public.user_profiles;
 DROP TRIGGER  IF EXISTS trg_driver_profiles_updated_at ON public.driver_profiles;
+DROP TABLE    IF EXISTS public.bookings         CASCADE;
 DROP TABLE    IF EXISTS public.vehicles         CASCADE;
 DROP TABLE    IF EXISTS public.driver_documents  CASCADE;
 DROP TABLE    IF EXISTS public.driver_profiles  CASCADE;
@@ -83,6 +84,25 @@ CREATE TABLE public.vehicles (
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- ── 4.3 bookings ─────────────────────────────────────────────
+CREATE TABLE public.bookings (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  passenger_id  UUID NOT NULL REFERENCES public.user_profiles(user_id) ON DELETE CASCADE,
+  driver_id     UUID REFERENCES public.driver_profiles(user_id) ON DELETE SET NULL,
+  pickup_name   TEXT NOT NULL,
+  pickup_lat    DOUBLE PRECISION NOT NULL,
+  pickup_lng    DOUBLE PRECISION NOT NULL,
+  dropoff_name  TEXT NOT NULL,
+  dropoff_lat   DOUBLE PRECISION NOT NULL,
+  dropoff_lng   DOUBLE PRECISION NOT NULL,
+  status        TEXT NOT NULL DEFAULT 'REQUESTED', -- REQUESTED, ACCEPTED, COMPLETED, CANCELLED
+  fare          NUMERIC(10, 2),
+  distance_km   NUMERIC(10, 2),
+  payment_status TEXT NOT NULL DEFAULT 'PENDING',
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- ── 5. updated_at helper ────────────────────────────────────
 CREATE FUNCTION public.set_updated_at()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
@@ -98,6 +118,10 @@ CREATE TRIGGER trg_user_profiles_updated_at
 
 CREATE TRIGGER trg_driver_profiles_updated_at
   BEFORE UPDATE ON public.driver_profiles
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+CREATE TRIGGER trg_bookings_updated_at
+  BEFORE UPDATE ON public.bookings
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 -- ── 6. handle_new_user trigger function ─────────────────────
@@ -199,6 +223,29 @@ CREATE POLICY "insert own vehicles"
 CREATE POLICY "update own vehicles"
   ON public.vehicles FOR UPDATE
   USING (auth.uid() = driver_id);
+
+-- bookings policies
+ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "passengers can view own bookings"
+  ON public.bookings FOR SELECT
+  USING (auth.uid() = passenger_id);
+
+CREATE POLICY "drivers can view own assigned bookings"
+  ON public.bookings FOR SELECT
+  USING (auth.uid() = driver_id);
+
+CREATE POLICY "drivers can view requested bookings"
+  ON public.bookings FOR SELECT
+  USING (status = 'REQUESTED');
+
+CREATE POLICY "passengers can insert bookings"
+  ON public.bookings FOR INSERT
+  WITH CHECK (auth.uid() = passenger_id);
+
+CREATE POLICY "participants can update bookings"
+  ON public.bookings FOR UPDATE
+  USING (auth.uid() = passenger_id OR auth.uid() = driver_id);
 
 -- ── 9. BACKFILL existing auth users ─────────────────────────
 INSERT INTO public.user_profiles (user_id, email, full_name, avatar_url, role)

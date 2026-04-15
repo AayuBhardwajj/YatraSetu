@@ -32,6 +32,9 @@ export interface DriverProfile {
   onboarding_step: number
   is_onboarding_complete: boolean
   created_at: string
+  // Relations
+  vehicles?: Vehicle[]
+  documents?: DriverDocument[]
 }
 
 export interface DriverDocument {

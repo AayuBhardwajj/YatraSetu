@@ -64,12 +64,29 @@ export const useAuthStore = create<AuthState>()(
         const supabase = createClient()
 
         if (role === 'driver') {
-          const { data } = await supabase
-            .from('driver_profiles')
-            .select('user_id, full_name, phone, city, vehicle_type, is_available, is_verified, onboarding_step, is_onboarding_complete')
-            .eq('user_id', user.id)
-            .maybeSingle()
-          set({ role: 'driver', driverProfile: data, isLoading: false, profileFetchedAt: Date.now() })
+          const [profileRes, vehiclesRes, docsRes] = await Promise.all([
+            supabase
+              .from('driver_profiles')
+              .select('*, user_id, full_name, phone, city, vehicle_type, make, model, plate_number, year, is_available, is_verified, onboarding_step, is_onboarding_complete')
+              .eq('user_id', user.id)
+              .maybeSingle(),
+            supabase
+              .from('vehicles')
+              .select('*')
+              .eq('driver_id', user.id),
+            supabase
+              .from('driver_documents')
+              .select('*')
+              .eq('driver_id', user.id)
+          ])
+
+          const fullProfile = profileRes.data ? {
+            ...profileRes.data,
+            vehicles: vehiclesRes.data || [],
+            documents: docsRes.data || []
+          } : null
+
+          set({ role: 'driver', driverProfile: fullProfile as DriverProfile, isLoading: false, profileFetchedAt: Date.now() })
         } else {
           const { data } = await supabase
             .from('user_profiles')

@@ -34,7 +34,7 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
             key={i}
             className="w-1 h-1 bg-success/40 rounded-full animate-pulse-green"
             style={{
-              animationDelay: `${Math.random() * 3}s`,
+              animationDelay: `${(i * 0.11) % 3}s`,
             }}
           />
         ))}

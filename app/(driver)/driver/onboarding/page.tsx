@@ -66,7 +66,7 @@ export default function DriverOnboardingPage() {
     if (!user) return
     supabase
         .from('driver_profiles')
-        .select('onboarding_step, full_name, phone, city, aadhaar_number, pan_number, dl_number, upi_id, bank_account, bank_ifsc, vehicle_type, is_available')
+        .select('onboarding_step, full_name, phone, city, aadhaar_number, pan_number, dl_number, upi_id, bank_account, bank_ifsc, vehicle_type, make, model, plate_number, year, is_available')
         .eq('user_id', user.id)
         .maybeSingle()
         .then(({ data }) => {
@@ -82,6 +82,10 @@ export default function DriverOnboardingPage() {
           if (data.bank_account) setValue('bank_account', data.bank_account)
           if (data.bank_ifsc) setValue('bank_ifsc', data.bank_ifsc)
           if (data.vehicle_type) setValue('vehicle_type', data.vehicle_type)
+          if (data.make) setValue('make', data.make)
+          if (data.model) setValue('model', data.model)
+          if (data.plate_number) setValue('plate_number', data.plate_number)
+          if (data.year) setValue('year', String(data.year))
           if (typeof data.is_available === 'boolean') setValue('is_available', data.is_available)
         })
   }, [user])
