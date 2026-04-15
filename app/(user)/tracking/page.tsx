@@ -3,7 +3,10 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Phone, MessageCircle, Share2, Star, CheckCircle2, ShieldAlert } from "lucide-react";
 import dynamic from "next/dynamic";
-const UserMap = dynamic(() => import("@/components/user/UserMap"), { ssr: false });
+const UserMapWrapper = dynamic(() => import("@/components/user/UserMapWrapper"), { 
+  ssr: false,
+  loading: () => <div className="w-full h-full bg-muted animate-pulse flex items-center justify-center text-text-muted text-sm">Initializing map...</div>
+});
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useRideStore } from "@/store/useRideStore";
@@ -21,30 +24,29 @@ export default function TrackingPage() {
   const { currentRide, driverInfo } = useRideStore();
   const [eta, setEta] = useState(4);
   const [driverPos, setDriverPos] = useState<{ id: string; lat: number; lng: number }[]>([]);
-  const [userPos, setUserPos] = useState<[number, number] | null>(null);
 
   useEffect(() => {
-    navigator.geolocation?.getCurrentPosition((pos) => {
-      const { latitude: lat, longitude: lng } = pos.coords;
-      setUserPos([lat, lng]);
-      // Single driver approaching
-      const base = { id: 'driver', lat: lat + 0.003, lng: lng + 0.002 };
-      setDriverPos([base]);
+    // Shared base for simulation (since Geolocation is in Wrapper)
+    const lat = 28.6139;
+    const lng = 77.2090;
 
-      // Driver slowly moves toward user
-      let step = 0;
-      const interval = setInterval(() => {
-        step++;
-        setDriverPos([{
-          id: 'driver',
-          lat: base.lat - step * 0.0003,
-          lng: base.lng - step * 0.0002,
-        }]);
-        if (step >= 10) clearInterval(interval);
-      }, 3000);
+    // Single driver approaching
+    const base = { id: 'driver', lat: lat + 0.003, lng: lng + 0.002 };
+    setDriverPos([base]);
 
-      return () => clearInterval(interval);
-    });
+    // Driver slowly moves toward user location
+    let step = 0;
+    const interval = setInterval(() => {
+      step++;
+      setDriverPos([{
+        id: 'driver',
+        lat: base.lat - step * 0.0003,
+        lng: base.lng - step * 0.0002,
+      }]);
+      if (step >= 10) clearInterval(interval);
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -61,7 +63,7 @@ export default function TrackingPage() {
     <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden bg-background">
       {/* Left: Map Panel */}
       <div className="flex-[7] h-full relative min-w-0">
-        <UserMap height="100%" drivers={driverPos} />
+        <UserMapWrapper drivers={driverPos} />
 
         {/* Map Overlay Pill */}
         <div className="absolute bottom-6 left-6 z-[1000]">

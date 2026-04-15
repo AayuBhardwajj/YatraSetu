@@ -2,6 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 🔥 CRITICAL: Leaflet needs explicit height */
+html,
+body,
+#__next {
+  height: 100%;
+}
+
+/* 🔥 Fix Leaflet container rendering */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  z-index: 0;
+}
+
+/* Optional: fix tile glitches */
+.leaflet-tile {
+  image-rendering: auto;
+}
+
+/* Prevent map flicker */
+.leaflet-pane {
+  z-index: 1;
+}
+
 @layer base {
   :root {
     --primary: #6C47FF;
@@ -55,8 +79,9 @@
     @apply text-[12px] font-[400] text-text-muted;
   }
 
-  /* Prevent input overflow */
-  input, textarea, select {
+  input,
+  textarea,
+  select {
     max-width: 100%;
   }
 }
@@ -69,6 +94,7 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -77,8 +103,17 @@
 
 /* Map Animations */
 @keyframes pulse-green {
-  0%, 100% { transform: scale(1); opacity: 0.2; }
-  50% { transform: scale(1.5); opacity: 0.5; }
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.2;
+  }
+
+  50% {
+    transform: scale(1.5);
+    opacity: 0.5;
+  }
 }
 
 .animate-pulse-green {

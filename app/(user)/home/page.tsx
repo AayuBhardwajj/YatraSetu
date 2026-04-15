@@ -6,8 +6,8 @@ import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/useAuthStore";
 
-const UserMap = dynamic(
-  () => import("@/components/user/UserMap"),
+const UserMapWrapper = dynamic(
+  () => import("@/components/user/UserMapWrapper"),
   { ssr: false, loading: () => <div className="w-full h-full bg-muted animate-pulse" /> }
 );
 
@@ -28,23 +28,17 @@ interface Driver { id: string; lat: number; lng: number; }
 export default function UserHomePage() {
   const [selectedService, setSelectedService] = useState("ride");
   const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [userPos, setUserPos] = useState<[number, number] | null>(null);
   const router = useRouter();
   const { userProfile } = useAuthStore();
   const city = (userProfile as any)?.city || 'Your City';
 
-  // Get user position once to seed driver dots
-  useEffect(() => {
-    navigator.geolocation?.getCurrentPosition((pos) => {
-      const { latitude: lat, longitude: lng } = pos.coords;
-      setUserPos([lat, lng]);
-    });
-  }, []);
+
 
   // Generate 3 alive-feeling drivers that drift slightly
   useEffect(() => {
-    if (!userPos) return;
-    const [lat, lng] = userPos;
+    // Use a default coordinate base (Delhi or similar) for simulation seeding
+    const lat = 28.6139;
+    const lng = 77.2090;
 
     const base: Driver[] = [
       { id: 'd1', lat: lat + 0.003, lng: lng + 0.002 },
@@ -63,13 +57,13 @@ export default function UserHomePage() {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [userPos]);
+  }, []);
 
   return (
     <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden">
       {/* Left Column: Map */}
       <div className="flex-[3] h-full relative border-r border-border/50 min-w-0">
-        <UserMap height="100%" drivers={drivers} />
+        <UserMapWrapper drivers={drivers} />
 
         {/* Overlays */}
         <div className="absolute top-5 left-5 z-[1000]">

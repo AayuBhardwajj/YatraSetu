@@ -21,7 +21,10 @@ import {
   type DestinationSuggestion,
 } from "@/hooks/useDestinationSearch";
 
-const UserMap = dynamic(() => import("@/components/user/UserMap"), { ssr: false });
+const UserMapWrapper = dynamic(() => import("@/components/user/UserMapWrapper"), { 
+  ssr: false,
+  loading: () => <div className="w-full h-full bg-muted animate-pulse flex items-center justify-center text-text-muted text-sm">Initializing map...</div>
+});
 
 /* ─── Constants ─────────────────────────────────────────────────────────── */
 const CATEGORIES = [
@@ -38,7 +41,6 @@ export default function BookingPage() {
   const [selectedCategory, setSelectedCategory] = useState("mini");
   const [isLoaded,         setIsLoaded]         = useState(false);
   const [drivers,          setDrivers]           = useState<Driver[]>([]);
-  const [userPos,          setUserPos]           = useState<[number, number] | null>(null);
 
   // Destination search UI state
   const [query,       setQuery]       = useState("");
@@ -55,8 +57,8 @@ export default function BookingPage() {
 
   /* ── Nominatim live search ─────────────────────────────────────────────── */
   const { suggestions, isLoading, error } = useDestinationSearch(query, {
-    userLat: userPos?.[0],
-    userLng: userPos?.[1],
+    userLat: undefined,
+    userLng: undefined,
     limit: 5,
   });
 
@@ -70,17 +72,13 @@ export default function BookingPage() {
     setRecentSearches(getRecentSearches());
   }, []);
 
-  /* ── Geolocation ───────────────────────────────────────────────────────── */
-  useEffect(() => {
-    navigator.geolocation?.getCurrentPosition((pos) =>
-      setUserPos([pos.coords.latitude, pos.coords.longitude])
-    );
-  }, []);
+
 
   /* ── Simulated drivers ─────────────────────────────────────────────────── */
   useEffect(() => {
-    if (!userPos) return;
-    const [lat, lng] = userPos;
+    // Note: Since geolocation is managed by the MapWrapper, we use a fixed center for simulation
+    const lat = 28.6139; 
+    const lng = 77.2090;
     const base: Driver[] = [
       { id: "d1", lat: lat + 0.003, lng: lng + 0.002 },
       { id: "d2", lat: lat - 0.002, lng: lng + 0.004 },
@@ -95,7 +93,7 @@ export default function BookingPage() {
       }))), 3000
     );
     return () => clearInterval(interval);
-  }, [userPos]);
+  }, []);
 
   /* ── Click-outside dismissal ───────────────────────────────────────────── */
   useEffect(() => {
@@ -140,10 +138,8 @@ export default function BookingPage() {
   };
 
   const handleUseCurrentLocation = () => {
-    if (!userPos) return;
-    const [lat, lng] = userPos;
     setDestinationName("Current Location");
-    setDestinationCoords({ lat, lng });
+    setDestinationCoords(null); 
     setQuery("Current Location");
     setShowDropdown(false);
   };
@@ -179,10 +175,9 @@ export default function BookingPage() {
     <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden bg-background">
       {/* ── Left: Map ──────────────────────────────────────────────────────── */}
       <div className="flex-[3] h-full relative border-r border-border/50 min-w-0">
-        <UserMap
-          height="100%"
+        <UserMapWrapper
           drivers={drivers}
-          destinationCoords={destinationCoords}
+          destination={destinationCoords ? [destinationCoords.lat, destinationCoords.lng] : null}
         />
 
         {/* Route pill badges */}
