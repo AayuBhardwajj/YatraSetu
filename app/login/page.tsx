@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AuthBackground } from "@/components/login/MouseParallax";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { getSupabaseSafeRedirectUrl } from "@/lib/utils/url";
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -89,7 +90,7 @@ export default function AuthPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?role=${role}`,
+        redirectTo: getSupabaseSafeRedirectUrl(`/auth/callback?role=${role}`),
         queryParams: { role },
       },
     });

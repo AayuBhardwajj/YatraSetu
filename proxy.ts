@@ -53,7 +53,8 @@ export async function proxy(request: NextRequest) {
   }
 
   if (pathname === '/onboarding' || pathname.startsWith('/driver/onboarding')) {
-    return response
+      response.headers.set('ngrok-skip-browser-warning', 'true')
+  return response
   }
 
   if (role === 'driver') {
@@ -78,6 +79,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+    response.headers.set('ngrok-skip-browser-warning', 'true')
   return response
 }
 
