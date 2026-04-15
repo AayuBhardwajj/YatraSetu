@@ -5,50 +5,40 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
 
-  if (!code) {
-    return NextResponse.redirect(`${origin}/login?error=missing_code`)
-  }
+  if (!code) return NextResponse.redirect(`${origin}/login?error=missing_code`)
 
   const supabase = await createClient()
   const { error } = await supabase.auth.exchangeCodeForSession(code)
-
-  if (error) {
-    return NextResponse.redirect(`${origin}/login?error=auth_failed`)
-  }
+  if (error) return NextResponse.redirect(`${origin}/login?error=auth_failed`)
 
   const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.redirect(`${origin}/login?error=no_user`)
-  }
-
-  const role = user.user_metadata?.role as 'user' | 'driver' | undefined
+  if (!user) return NextResponse.redirect(`${origin}/login?error=no_user`)
 
   const baseUrl = process.env.NODE_ENV === 'development'
     ? origin
     : `https://${request.headers.get('x-forwarded-host') ?? new URL(origin).host}`
 
+  const role = user.user_metadata?.role as 'user' | 'driver' | undefined
+
   if (role === 'driver') {
-    const { data: driverProfile } = await supabase
+    const { data } = await supabase
       .from('driver_profiles')
-      .select('is_onboarding_complete')
+      .select('is_onboarding_complete')  // ✅ now exists
       .eq('user_id', user.id)
-      .single()
+      .maybeSingle()
 
-    const dest = driverProfile?.is_onboarding_complete
-      ? '/driver/dashboard'
-      : '/driver/onboarding'
-
-    return NextResponse.redirect(`${baseUrl}${dest}`)
+    return NextResponse.redirect(
+      `${baseUrl}${data?.is_onboarding_complete ? '/driver/dashboard' : '/driver/onboarding'}`
+    )
   }
 
-  // Default: user role
-  const { data: userProfile } = await supabase
+  const { data } = await supabase
     .from('user_profiles')
-    .select('is_profile_complete')
+    .select('is_profile_complete')  // ✅ now exists
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
-  const dest = userProfile?.is_profile_complete ? '/home' : '/onboarding'
-  return NextResponse.redirect(`${baseUrl}${dest}`)
+  return NextResponse.redirect(
+    `${baseUrl}${data?.is_profile_complete ? '/home' : '/onboarding'}`
+  )
 }

@@ -14,7 +14,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
     .from('user_profiles')
     .select('*')
     .eq('user_id', userId)
-    .single()
+    .maybeSingle()
   return data
 }
 
@@ -24,7 +24,7 @@ export async function getDriverProfile(userId: string): Promise<DriverProfile | 
     .from('driver_profiles')
     .select('*')
     .eq('user_id', userId)
-    .single()
+    .maybeSingle()
   return data
 }
 

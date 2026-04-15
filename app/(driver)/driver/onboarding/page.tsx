@@ -188,7 +188,7 @@ export default function DriverOnboardingPage() {
           vehicle_type: data.vehicle_type,
           is_available: data.is_available,
           onboarding_step: 5,
-          is_onboarding_complete: true,
+          is_onboarding_complete: true
         })
         .eq('user_id', user.id)
 

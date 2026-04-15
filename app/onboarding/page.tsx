@@ -81,7 +81,7 @@ export default function UserOnboardingPage() {
           phone: data.phone || null,
           city: data.city,
           avatar_url: avatar_url || undefined,
-          is_profile_complete: true,
+          is_profile_complete: true
         })
         .eq('user_id', user.id)
 

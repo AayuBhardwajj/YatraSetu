@@ -47,14 +47,14 @@ export const useAuthStore = create<AuthState>()(
             .from('driver_profiles')
             .select('*')
             .eq('user_id', user.id)
-            .single()
+            .maybeSingle()
           set({ role: 'driver', driverProfile: data, isLoading: false })
         } else {
           const { data } = await supabase
             .from('user_profiles')
             .select('*')
             .eq('user_id', user.id)
-            .single()
+            .maybeSingle()
           set({ role: 'user', userProfile: data, isLoading: false })
         }
       },
