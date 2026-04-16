@@ -25,7 +25,7 @@ graph TD
 
 - **Framework**: [Next.js 16](https://nextjs.org/) (App Router, Turbopack)
 - **Styling**: Vanilla CSS, Tailwind CSS
-- **Animations**: [Framer Motion](https://www.framer.com/motion/), [GSAP](https://greensock.com/gsap/) (for complex parallax/login effects)
+- **Animations**: [Framer Motion](https://www.framer.com/motion/) (for parallax and UI transitions)
 - **State Management**: [Zustand](https://github.com/pmndrs/zustand) (with persistence middleware)
 - **Backend / DB**: [Supabase](https://supabase.com/) (Postgres + Auth + Realtime Broadcast)
 - **File Uploads**: [Cloudinary](https://cloudinary.com/) (Documents & Profile Pics)

@@ -5,9 +5,10 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
 
-  // ✅ Dynamic Host Detection
-  // Detects localhost or ngrok domain automatically from headers
-  const host = request.headers.get('host')
+  // ✅ Dynamic Host Detection for Ngrok Tunnels
+  // Prioritize headers sent by ngrok to ensure we redirect back to the tunnel, not localhost
+  const forwardedHost = request.headers.get('x-forwarded-host')
+  const host = forwardedHost || request.headers.get('host')
   const protocol = request.headers.get('x-forwarded-proto') || 'https'
   const baseUrl = `${protocol}://${host}`
 

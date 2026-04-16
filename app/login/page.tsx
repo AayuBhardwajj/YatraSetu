@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { gsap } from "gsap";
-import { useGSAP } from "@gsap/react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,16 +34,15 @@ export default function AuthPage() {
   const [selectedRole, setSelectedRole] = useState<LoginRole>("USER");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const [hasMounted, setHasMounted] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const container = useRef<HTMLDivElement>(null);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
-  useGSAP(() => {
-    gsap.from(".brand-logo", { y: 40, opacity: 0, duration: 1.2, ease: "power3.out", delay: 0.1 });
-    gsap.to(".gsap-word", { y: 0, opacity: 1, duration: 1.2, stagger: 0.1, ease: "power4.out", delay: 0.3 });
-    gsap.from(".gsap-fade-up", { y: 30, opacity: 0, duration: 1, stagger: 0.15, ease: "power3.out", delay: 0.7 });
-  }, { scope: container });
+  useEffect(() => {
+    console.log("Login Page Mounted, origin:", window.location.origin);
+    setHasMounted(true);
+  }, []);
 
   const {
     register: registerLogin,
@@ -107,8 +104,8 @@ export default function AuthPage() {
   return (
     <AuthBackground>
       <div className="flex w-full h-full max-w-[1600px] mx-auto relative z-10">
-        <div ref={container} className="hidden lg:flex flex-col justify-between w-1/2 p-16 relative text-white">
-          <div className="brand-logo flex items-center gap-4">
+        <div className="hidden lg:flex flex-col justify-between w-1/2 p-16 relative text-white">
+          <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-primary font-bold text-3xl shadow-lg">
               Z
             </div>
@@ -117,25 +114,24 @@ export default function AuthPage() {
 
           <div className="space-y-6 max-w-lg mb-20">
             <h1 className="text-6xl font-bold leading-[1.1] tracking-tight">
-               <span className="inline-block overflow-hidden pb-2"><span className="gsap-word inline-block translate-y-[100%] opacity-0">Move</span></span>{" "}
-               <span className="inline-block overflow-hidden pb-2"><span className="gsap-word inline-block translate-y-[100%] opacity-0">the</span></span>{" "}
-               <span className="inline-block overflow-hidden pb-2"><span className="gsap-word inline-block translate-y-[100%] opacity-0">way</span></span>
+               Move the way
                <br /> 
-               <span className="inline-block overflow-hidden pt-2 pb-2"><span className="text-primary-light gsap-word inline-block translate-y-[100%] opacity-0">you want.</span></span>
+               <span className="text-primary-light">you want.</span>
             </h1>
-            <p className="gsap-fade-up text-lg text-white/70 font-medium leading-relaxed">
+            <p className="text-lg text-white/70 font-medium leading-relaxed">
               Experience the fastest, safest, and most reliable ride-booking platform. Whether you're riding, driving, or managing operations, Zipp empowers your journey.
             </p>
           </div>
         </div>
 
         <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-6 lg:p-12 relative">
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="w-full max-w-[480px] bg-white rounded-[40px] shadow-2xl overflow-hidden flex flex-col my-auto"
-          >
+          {hasMounted && (
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="w-full max-w-[480px] bg-white rounded-[40px] shadow-2xl overflow-hidden flex flex-col my-auto"
+            >
             <div className="p-8 sm:p-10 space-y-8 flex-1">
               <div className="text-center space-y-2">
                 <h2 className="text-2xl font-bold text-text-primary">Welcome Back</h2>
@@ -211,6 +207,7 @@ export default function AuthPage() {
             </div>
             <div className="h-1.5 w-full bg-gradient-to-r from-primary via-[#9D80FF] to-primary/40 mt-auto flex-shrink-0" />
           </motion.div>
+          )}
         </div>
       </div>
     </AuthBackground>

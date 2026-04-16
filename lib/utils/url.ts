@@ -3,20 +3,23 @@
  * Handles switching between localhost and ngrok/production domains dynamically.
  */
 export function getBaseUrl() {
-  // 1. Browser context: always use the current origin
+  // 1. Browser context: prioritize the environment variable if it's set
+  // This provides stability during hydration for static ngrok domains.
   if (typeof window !== 'undefined') {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (appUrl && appUrl.includes(window.location.hostname)) {
+      return appUrl.replace(/\/$/, ""); // Remove trailing slash
+    }
     return window.location.origin;
   }
 
   // 2. Server context (SSR / API Routes / Middleware)
-  // Use Vercel URL if available, otherwise fallback to local/env
   if (process.env.NEXT_PUBLIC_VERCEL_URL) {
     return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
   }
 
-  // Default to localhost, but this should be overridden by 
-  // request-specific logic in SSR if using ngrok headers.
-  return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  // 3. Fallback to fixed APP_URL or localhost
+  return (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, "");
 }
 
 /**

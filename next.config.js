@@ -22,7 +22,11 @@ const nextConfig = {
 
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-avatar', 'framer-motion'],
+    serverActions: {
+      allowedOrigins: ['*.ngrok-free.app', '*.ngrok-free.dev', 'predisordered-civil-jeffrey.ngrok-free.dev', 'localhost:3000'],
+    },
   },
+  allowedDevOrigins: ['*.ngrok-free.app', '*.ngrok-free.dev', 'predisordered-civil-jeffrey.ngrok-free.dev', 'localhost:3000'],
 }
 
 module.exports = nextConfig
