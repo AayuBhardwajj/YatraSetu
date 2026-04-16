@@ -77,14 +77,14 @@ export default function UserOnboardingPage() {
 
       const { error } = await supabase
         .from('user_profiles')
-        .update({
+        .upsert({
+          user_id: user.id,
           full_name: data.full_name,
           phone: data.phone || null,
           city: data.city,
           avatar_url: avatar_url || undefined,
           is_profile_complete: true
-        })
-        .eq('user_id', user.id)
+        }, { onConflict: 'user_id' })
 
       if (error) throw error
 

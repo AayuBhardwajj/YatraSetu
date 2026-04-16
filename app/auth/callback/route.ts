@@ -21,33 +21,43 @@ export async function GET(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.redirect(`${baseUrl}/login?error=no_user`)
 
-  // ✅ Role Sync
+  // ✅ Role Sync (Fast)
+  // We skip supabase.auth.updateUser here as it's slow (3.6s delay).
   let role = searchParams.get('role') as 'user' | 'driver' | null
-  if (role) {
-    await supabase.auth.updateUser({ data: { role } })
-  } else {
+  if (!role) {
     role = user.user_metadata?.role as 'user' | 'driver' | undefined
   }
 
+  // ✅ Lazy Profile Verification
+  // Ensures user_profiles exists before checking completion.
+  // Both roles MUST have a user_profiles entry (driver_profiles depends on it).
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .upsert({
+      user_id: user.id,
+      email: user.email,
+      full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
+      role: (role === 'driver' ? 'driver' : 'user')
+    }, { onConflict: 'user_id' })
+    .select('is_profile_complete')
+    .maybeSingle()
+
   if (role === 'driver') {
-    const { data } = await supabase
+    const { data: driver } = await supabase
       .from('driver_profiles')
+      .upsert({ 
+        user_id: user.id,
+        full_name: user.user_metadata?.full_name || user.user_metadata?.name || ''
+      }, { onConflict: 'user_id' })
       .select('is_onboarding_complete')
-      .eq('user_id', user.id)
       .maybeSingle()
 
     return NextResponse.redirect(
-      `${baseUrl}${data?.is_onboarding_complete ? '/driver/dashboard' : '/driver/onboarding'}`
+      `${baseUrl}${driver?.is_onboarding_complete ? '/driver/dashboard' : '/driver/onboarding'}`
     )
   }
 
-  const { data } = await supabase
-    .from('user_profiles')
-    .select('is_profile_complete')
-    .eq('user_id', user.id)
-    .maybeSingle()
-
   return NextResponse.redirect(
-    `${baseUrl}${data?.is_profile_complete ? '/home' : '/onboarding'}`
+    `${baseUrl}${profile?.is_profile_complete ? '/home' : '/onboarding'}`
   )
 }
