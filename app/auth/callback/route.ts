@@ -22,42 +22,40 @@ export async function GET(request: Request) {
   if (!user) return NextResponse.redirect(`${baseUrl}/login?error=no_user`)
 
   // ✅ Role Sync (Fast)
-  // We skip supabase.auth.updateUser here as it's slow (3.6s delay).
-  let role = searchParams.get('role') as 'user' | 'driver' | null
-  if (!role) {
-    role = user.user_metadata?.role as 'user' | 'driver' | undefined
-  }
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return NextResponse.redirect(`${baseUrl}/login?error=no_session`)
 
-  // ✅ Lazy Profile Verification
-  // Ensures user_profiles exists before checking completion.
-  // Both roles MUST have a user_profiles entry (driver_profiles depends on it).
-  const { data: profile } = await supabase
+  const role = session.user.user_metadata?.role ?? 'user'
+
+  const { data: existing } = await supabase
     .from('user_profiles')
-    .upsert({
-      user_id: user.id,
-      email: user.email,
-      full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
-      role: (role === 'driver' ? 'driver' : 'user')
-    }, { onConflict: 'user_id' })
-    .select('is_profile_complete')
-    .maybeSingle()
+    .select('user_id, role, is_profile_complete')
+    .eq('user_id', session.user.id)
+    .single()
 
-  if (role === 'driver') {
-    const { data: driver } = await supabase
-      .from('driver_profiles')
-      .upsert({ 
-        user_id: user.id,
-        full_name: user.user_metadata?.full_name || user.user_metadata?.name || ''
-      }, { onConflict: 'user_id' })
-      .select('is_onboarding_complete')
-      .maybeSingle()
-
-    return NextResponse.redirect(
-      `${baseUrl}${driver?.is_onboarding_complete ? '/driver/dashboard' : '/driver/onboarding'}`
-    )
+  if (!existing) {
+    // First login — create profile row
+    await supabase.from('user_profiles').insert({
+      user_id: session.user.id,
+      email: session.user.email,
+      role,
+      is_profile_complete: false,
+    })
   }
 
-  return NextResponse.redirect(
-    `${baseUrl}${profile?.is_profile_complete ? '/home' : '/onboarding'}`
-  )
+  // Redirect based on role and completion
+  const isComplete = existing?.is_profile_complete ?? false
+  const effectiveRole = existing?.role ?? role
+
+  if (!isComplete) {
+    if (effectiveRole === 'driver') {
+      return NextResponse.redirect(new URL('/driver/onboarding', request.url))
+    }
+    return NextResponse.redirect(new URL('/onboarding', request.url))
+  }
+
+  if (effectiveRole === 'driver') {
+    return NextResponse.redirect(new URL('/driver/dashboard', request.url))
+  }
+  return NextResponse.redirect(new URL('/home', request.url))
 }

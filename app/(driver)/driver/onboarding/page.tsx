@@ -215,6 +215,18 @@ export default function DriverOnboardingPage() {
       }
       console.log('Driver profile saved')
 
+      // Mark user profile as complete
+      console.log('Marking user profile as complete...')
+      const { error: userError } = await supabase
+        .from('user_profiles')
+        .update({ is_profile_complete: true })
+        .eq('user_id', user.id)
+      if (userError) {
+        console.error('user_profiles update error:', userError)
+        throw userError
+      }
+      console.log('User profile marked complete')
+
       updateDriverProfile({ is_onboarding_complete: true, city: data.city, is_available: data.is_available })
       toast({ title: 'Application submitted!', description: 'Redirecting to your dashboard...' })
       router.push('/driver/dashboard')

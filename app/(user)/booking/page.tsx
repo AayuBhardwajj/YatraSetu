@@ -41,6 +41,7 @@ export default function BookingPage() {
   const [selectedCategory, setSelectedCategory] = useState("mini");
   const [isLoaded,         setIsLoaded]         = useState(false);
   const [drivers,          setDrivers]           = useState<Driver[]>([]);
+  const [loading,          setLoading]           = useState(false);
 
   // Destination search UI state
   const [query,       setQuery]       = useState("");
@@ -144,25 +145,43 @@ export default function BookingPage() {
     setShowDropdown(false);
   };
 
-  const handleBooking = () => {
-    const category = CATEGORIES.find((c) => c.id === selectedCategory);
-    if (!category) return;
-    const nowIso = new Date().toISOString();
-    setRide({
-      id: "ride_" + Date.now(),
-      userId: "user_demo",
-      type: "RIDE",
-      pickup: "Current Location",
-      dropoff: destinationName || query || "Unknown Destination",
-      distanceKm: 0,
-      etaMinutes: 0,
-      basePrice: category.price,
-      status: RideStatus.REQUESTED,
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    });
-    initNegotiation(MOCK_ML_PRICING.suggestedPrice, MOCK_ML_PRICING.minPrice, MOCK_ML_PRICING.maxPrice);
-    router.push("/negotiate");
+  const handleBooking = async () => {
+    if (!user) return
+    setLoading(true)
+    try {
+      console.log("1. handleBooking called")
+
+      const res = await fetch('/api/rides/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pickupLabel: 'Current Location',
+          dropLabel: destinationName || query || 'Unknown Destination',
+          pickupLat: 30.9,
+          pickupLng: 75.85,
+          dropLat: destinationCoords?.lat ?? 30.92,
+          dropLng: destinationCoords?.lng ?? 75.87,
+          distanceKm: 3.0, // Default for now
+          passengerId: user.id,
+        }),
+      })
+
+      const json = await res.json()
+      console.log("2. Booking API response:", res.status, json)
+
+      if (!res.ok) {
+        toast({ variant: 'destructive', title: 'Booking failed', description: json.error })
+        return
+      }
+
+      initNegotiation(MOCK_ML_PRICING.suggestedPrice, MOCK_ML_PRICING.minPrice, MOCK_ML_PRICING.maxPrice);
+      router.push(`/negotiate?rideId=${json.ride.id}`)
+    } catch (err: any) {
+      console.error("3. handleBooking error:", err)
+      toast({ variant: 'destructive', title: 'Error', description: err.message })
+    } finally {
+      setLoading(false)
+    }
   };
 
   /* ── Dropdown content ──────────────────────────────────────────────────── */
@@ -395,10 +414,10 @@ export default function BookingPage() {
                 <div className="flex flex-col space-y-2.5 pt-1">
                   <Button
                     onClick={handleBooking}
-                    disabled={!destinationName && !query}
+                    disabled={(!destinationName && !query) || loading}
                     className="w-full h-12 bg-primary hover:bg-primary/90 text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Accept ₹{MOCK_ML_PRICING.suggestedPrice}
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : `Accept ₹${MOCK_ML_PRICING.suggestedPrice}`}
                   </Button>
                   <Button
                     variant="outline"

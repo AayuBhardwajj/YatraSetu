@@ -13,6 +13,15 @@ export async function POST(req: NextRequest) {
     driverMileageKmpl = 18,
   } = body
 
+  const passenger_id = passengerId
+  const pickup_lat = pickupLat
+  const pickup_lng = pickupLng
+  const pickup_label = pickupLabel
+  const drop_lat = dropLat
+  const drop_lng = dropLng
+  const drop_label = dropLabel
+  const distance_km = distanceKm
+
   const now = new Date()
 
   // Count demand for multiplier
@@ -36,26 +45,33 @@ export async function POST(req: NextRequest) {
     onlineDrivers: onlineDrivers ?? 1,
   })
 
+  const insertPayload = {
+    passenger_id,
+    pickup_lat,
+    pickup_lng,
+    pickup_label,
+    drop_lat,
+    drop_lng,
+    drop_label,
+    distance_km,
+    suggested_price: pricing.price,
+    status: 'open',
+  }
+
+  console.log("Inserting ride request:", insertPayload)
+
   const { data: ride, error } = await supabase
     .from('ride_requests')
-    .insert({
-      passenger_id: passengerId,
-      pickup_lat: pickupLat,
-      pickup_lng: pickupLng,
-      pickup_label: pickupLabel,
-      drop_lat: dropLat,
-      drop_lng: dropLng,
-      drop_label: dropLabel,
-      distance_km: distanceKm,
-      suggested_price: pricing.price,
-      status: 'open',
-    })
+    .insert(insertPayload)
     .select()
     .single()
 
   if (error) {
+    console.error("ride_requests insert error:", error.code, error.message, error.details)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+
+  console.log("Ride created successfully:", ride.id)
 
   // Log pricing event for future ML training
   await supabase.from('pricing_events').insert({

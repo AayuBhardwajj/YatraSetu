@@ -121,13 +121,10 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'zipp-auth-v2',
       storage: createJSONStorage(() => localStorage),
-      // Persist profile so it's available instantly on next page load (no flash)
+      // Persist only non-routing state
       partialize: (state) => ({
-        role: state.role,
         user: state.user,
-        userProfile: state.userProfile,
-        driverProfile: state.driverProfile,
-        profileFetchedAt: state.profileFetchedAt,
+        // role, userProfile, and driverProfile must be fetched fresh
       }),
     }
   )
