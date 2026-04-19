@@ -1,5 +1,4 @@
 'use client'
-
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
@@ -8,7 +7,7 @@ import * as z from 'zod'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   User, Phone, CreditCard, Car, MapPin, Camera,
-  ChevronRight, ChevronLeft, CheckCircle2, Loader2,
+  ChevronRight, ChevronLeft, Loader2,
   Banknote, BadgeCheck, ShieldCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -65,41 +64,40 @@ export default function DriverOnboardingPage() {
   useEffect(() => {
     if (!user) return
     supabase
-        .from('driver_profiles')
-        .select('onboarding_step, full_name, phone, city, aadhaar_number, pan_number, dl_number, upi_id, bank_account, bank_ifsc, vehicle_type, make, model, plate_number, year, is_available')
-        .eq('user_id', user.id)
-        .maybeSingle()
-        .then(({ data }) => {
-          if (!data) return
-          if (data.onboarding_step > 1) setStep(data.onboarding_step)
-          if (data.full_name) setValue('full_name', data.full_name)
-          if (data.phone) setValue('phone', data.phone)
-          if (data.city) setValue('city', data.city)
-          if (data.aadhaar_number) setValue('aadhaar_number', data.aadhaar_number)
-          if (data.pan_number) setValue('pan_number', data.pan_number)
-          if (data.dl_number) setValue('dl_number', data.dl_number)
-          if (data.upi_id) setValue('upi_id', data.upi_id)
-          if (data.bank_account) setValue('bank_account', data.bank_account)
-          if (data.bank_ifsc) setValue('bank_ifsc', data.bank_ifsc)
-          if (data.vehicle_type) setValue('vehicle_type', data.vehicle_type)
-          if (data.make) setValue('make', data.make)
-          if (data.model) setValue('model', data.model)
-          if (data.plate_number) setValue('plate_number', data.plate_number)
-          if (data.year) setValue('year', String(data.year))
-          if (typeof data.is_available === 'boolean') setValue('is_available', data.is_available)
-        })
+      .from('driver_profiles')
+      .select('onboarding_step, full_name, phone, city, aadhaar_number, pan_number, dl_number, upi_id, bank_account, bank_ifsc, vehicle_type, make, model, plate_number, year, is_available')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!data) return
+        if (data.onboarding_step > 1) setStep(data.onboarding_step)
+        if (data.full_name) setValue('full_name', data.full_name)
+        if (data.phone) setValue('phone', data.phone)
+        if (data.city) setValue('city', data.city)
+        if (data.aadhaar_number) setValue('aadhaar_number', data.aadhaar_number)
+        if (data.pan_number) setValue('pan_number', data.pan_number)
+        if (data.dl_number) setValue('dl_number', data.dl_number)
+        if (data.upi_id) setValue('upi_id', data.upi_id)
+        if (data.bank_account) setValue('bank_account', data.bank_account)
+        if (data.bank_ifsc) setValue('bank_ifsc', data.bank_ifsc)
+        if (data.vehicle_type) setValue('vehicle_type', data.vehicle_type)
+        if (data.make) setValue('make', data.make)
+        if (data.model) setValue('model', data.model)
+        if (data.plate_number) setValue('plate_number', data.plate_number)
+        if (data.year) setValue('year', String(data.year))
+        if (typeof data.is_available === 'boolean') setValue('is_available', data.is_available)
+      })
   }, [user])
 
   const persistStep = async (nextStep: number, patch: Partial<FormValues> = {}) => {
     if (!user) return
     const { error } = await supabase
       .from('driver_profiles')
-      .upsert({ 
+      .upsert({
         user_id: user.id,
-        ...patch, 
-        onboarding_step: nextStep 
+        ...patch,
+        onboarding_step: nextStep
       }, { onConflict: 'user_id' })
-    
     if (error) console.error('Failed to persist step:', error)
   }
 
@@ -114,7 +112,6 @@ export default function DriverOnboardingPage() {
   const next = async () => {
     const valid = await trigger(fieldMap[step])
     if (!valid) return
-
     if (step === 2) {
       const missing = DOC_TYPES.filter(t => !docs[t])
       if (missing.length > 0) {
@@ -122,12 +119,10 @@ export default function DriverOnboardingPage() {
         return
       }
     }
-
     const values = watch()
     const patch: Record<string, unknown> = {}
     fieldMap[step].forEach(f => { patch[f] = values[f] })
     await persistStep(step + 1, patch as Partial<FormValues>)
-
     setDirection(1)
     setStep(s => s + 1)
   }
@@ -143,6 +138,7 @@ export default function DriverOnboardingPage() {
     setDocPreviews(p => ({ ...p, [type]: URL.createObjectURL(file) }))
   }
 
+  // ✅ onSubmit is a standalone function — NOT nested inside JSX or return
   const onSubmit = async (data: FormValues) => {
     setLoading(true)
     try {
@@ -152,25 +148,34 @@ export default function DriverOnboardingPage() {
       for (const type of DOC_TYPES) {
         const file = docs[type]
         if (!file) continue
-
+        console.log(`Signing ${type}...`)
         const res = await fetch('/api/cloudinary/sign', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ docType: type }),
         })
         const signData = await res.json()
-        const uploaded = await uploadToCloudinary(file, signData)
+        console.log(`Sign data for ${type}:`, signData)
 
-        await supabase.from('driver_documents').upsert({
+        const uploaded = await uploadToCloudinary(file, signData)
+        console.log(`Uploaded ${type}:`, uploaded)
+
+        const { error: docError } = await supabase.from('driver_documents').upsert({
           driver_id: user.id,
           doc_type: type,
           file_url: uploaded.secure_url,
           cloudinary_id: uploaded.public_id,
         }, { onConflict: 'driver_id,doc_type' })
+        if (docError) {
+          console.error(`driver_documents upsert error for ${type}:`, docError)
+          throw docError
+        }
+        console.log(`Saved doc ${type} to DB`)
       }
 
       // Insert vehicle
-      await supabase.from('vehicles').upsert({
+      console.log('Upserting vehicle...')
+      const { error: vehicleError } = await supabase.from('vehicles').upsert({
         driver_id: user.id,
         vehicle_type: data.vehicle_type,
         make: data.make,
@@ -178,11 +183,18 @@ export default function DriverOnboardingPage() {
         plate_number: data.plate_number,
         year: parseInt(data.year),
       }, { onConflict: 'plate_number' })
+      if (vehicleError) {
+        console.error('vehicles upsert error:', vehicleError)
+        throw vehicleError
+      }
+      console.log('Vehicle saved')
 
       // Finalize driver profile
+      console.log('Upserting driver profile...')
       const { error } = await supabase
         .from('driver_profiles')
-        .update({
+        .upsert({
+          user_id: user.id,
           full_name: data.full_name,
           phone: data.phone,
           city: data.city,
@@ -196,23 +208,28 @@ export default function DriverOnboardingPage() {
           is_available: data.is_available,
           onboarding_step: 5,
           is_onboarding_complete: true
-        })
-        .eq('user_id', user.id)
+        }, { onConflict: 'user_id' })
+      if (error) {
+        console.error('driver_profiles upsert error:', error)
+        throw error
+      }
+      console.log('Driver profile saved')
 
-      if (error) throw error
-
-      // Optimistic store update
       updateDriverProfile({ is_onboarding_complete: true, city: data.city, is_available: data.is_available })
-
       toast({ title: 'Application submitted!', description: 'Redirecting to your dashboard...' })
       router.push('/driver/dashboard')
+
     } catch (err: any) {
-      toast({ variant: 'destructive', title: 'Error', description: err.message })
+      console.error("Full error:", JSON.stringify(err, null, 2))
+      console.error("Error message:", err?.message)
+      console.error("Error code:", err?.code)
+      toast({ variant: 'destructive', title: 'Error', description: err?.message || JSON.stringify(err) })
     } finally {
       setLoading(false)
     }
   }
 
+  // ✅ variants and vehicleType are defined here, at component scope
   const variants = {
     enter: (d: number) => ({ x: d > 0 ? 40 : -40, opacity: 0 }),
     center: { x: 0, opacity: 1 },
@@ -221,6 +238,7 @@ export default function DriverOnboardingPage() {
 
   const vehicleType = watch('vehicle_type')
 
+  // ✅ return is at component level, not inside onSubmit
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-background flex items-center justify-center p-4">
       <motion.div

@@ -58,24 +58,36 @@ export default function UserOnboardingPage() {
   }
 
   const onSubmit = async (data: FormValues) => {
+    console.log("1. Finish clicked");
     setLoading(true)
     try {
+      console.log("2. Checking user from store:", user);
       if (!user) throw new Error('Not authenticated')
 
       let avatar_url = ''
 
       if (photo) {
+        console.log("3. Starting Cloudinary sign request");
         const res = await fetch('/api/cloudinary/sign', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ docType: 'avatar' }),
         })
-        const signData = await res.json()
+        const signData = await res.json();
+        console.log("4. Sign response:", signData);
+
+        console.log("5. Starting Cloudinary upload");
         const uploaded = await uploadToCloudinary(photo, signData)
+        console.log("6. Upload result:", uploaded);
         avatar_url = uploaded.secure_url
       }
 
-      const { error } = await supabase
+      console.log("7. Fetching Supabase session");
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      console.log("8. Session at save time:", session, "Error:", sessionError);
+
+      console.log("9. Starting Supabase profile upsert");
+      const { data: upsertData, error } = await supabase
         .from('user_profiles')
         .upsert({
           user_id: user.id,
@@ -86,14 +98,21 @@ export default function UserOnboardingPage() {
           is_profile_complete: true
         }, { onConflict: 'user_id' })
 
+      console.log("10. Upsert result:", upsertData, "Error:", error);
+
       if (error) throw error
 
       // Optimistic update so sidebar/header reflect name instantly
+      console.log("11. Updating local profile state");
       updateUserProfile({ full_name: data.full_name, is_profile_complete: true })
+      
+      console.log("12. Attempting redirect to /home");
       router.push('/home')
     } catch (err: any) {
+      console.error("13. Caught error:", err);
       toast({ variant: 'destructive', title: 'Error', description: err.message })
     } finally {
+      console.log("14. Setting loading to false");
       setLoading(false)
     }
   }
