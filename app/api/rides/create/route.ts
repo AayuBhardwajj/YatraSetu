@@ -13,15 +13,6 @@ export async function POST(req: NextRequest) {
     driverMileageKmpl = 18,
   } = body
 
-  const passenger_id = passengerId
-  const pickup_lat = pickupLat
-  const pickup_lng = pickupLng
-  const pickup_label = pickupLabel
-  const drop_lat = dropLat
-  const drop_lng = dropLng
-  const drop_label = dropLabel
-  const distance_km = distanceKm
-
   const now = new Date()
 
   // Count demand for multiplier
@@ -45,17 +36,19 @@ export async function POST(req: NextRequest) {
     onlineDrivers: onlineDrivers ?? 1,
   })
 
+  // Explicitly mapping payload to DB columns (match sql/004_realtime_rides.sql)
   const insertPayload = {
-    passenger_id,
-    pickup_lat,
-    pickup_lng,
-    pickup_label,
-    drop_lat,
-    drop_lng,
-    drop_label,
-    distance_km,
+    passenger_id: passengerId,
+    pickup_lat: pickupLat,
+    pickup_lng: pickupLng,
+    pickup_label: pickupLabel,
+    drop_lat: dropLat,
+    drop_lng: dropLng,
+    drop_label: dropLabel,
+    distance_km: distanceKm,
     suggested_price: pricing.price,
     status: 'open',
+    // expires_at is handled by DB default (interval 3 minutes)
   }
 
   console.log("Inserting ride request:", insertPayload)

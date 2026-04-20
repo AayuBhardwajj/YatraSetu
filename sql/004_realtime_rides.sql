@@ -74,9 +74,18 @@ CREATE POLICY "passenger_read_own" ON public.ride_requests
 -- Drivers can read open requests and ones assigned to them
 CREATE POLICY "driver_read_open" ON public.ride_requests
   FOR SELECT USING (
-    status = 'open'
+    (
+      status = 'open' 
+      AND EXISTS (
+        SELECT 1 FROM public.user_profiles 
+        WHERE user_id = auth.uid() AND role = 'driver'
+      )
+    )
     OR accepted_driver_id = auth.uid()
   );
+
+-- Enable Realtime
+ALTER PUBLICATION supabase_realtime ADD TABLE public.ride_requests;
 
 -- Drivers can update status when accepting
 CREATE POLICY "driver_accept" ON public.ride_requests

@@ -1,10 +1,23 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { getBaseUrl } from '@/lib/utils/url'
 
 const PUBLIC_PATHS = ['/', '/login', '/signup', '/auth/callback']
 
 export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl
+  const { pathname, searchParams } = request.nextUrl
+  const baseUrl = getBaseUrl(request)
+
+  // ✅ Catch-all for OAuth codes/errors landing on public paths (like "/")
+  // Redirect them to the formal callback handler
+  const hasAuthParams = searchParams.has('code') || searchParams.has('error')
+  if (hasAuthParams && pathname !== '/auth/callback') {
+    const callbackUrl = new URL('/auth/callback', baseUrl)
+    searchParams.forEach((value, key) => callbackUrl.searchParams.set(key, value))
+    const response = NextResponse.redirect(callbackUrl)
+    response.headers.set('ngrok-skip-browser-warning', 'true')
+    return response
+  }
 
   if (
     PUBLIC_PATHS.includes(pathname) ||
@@ -12,10 +25,13 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/api') ||
     pathname.includes('.')
   ) {
-    return NextResponse.next({ request })
+    const response = NextResponse.next({ request })
+    response.headers.set('ngrok-skip-browser-warning', 'true')
+    return response
   }
 
   let response = NextResponse.next({ request })
+  response.headers.set('ngrok-skip-browser-warning', 'true')
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,7 +41,14 @@ export async function proxy(request: NextRequest) {
         getAll: () => request.cookies.getAll(),
         setAll: (cookiesToSet) => {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          
+          // Preserve existing headers when recreating the response
+          const existingHeaders = new Headers(response.headers)
           response = NextResponse.next({ request })
+          existingHeaders.forEach((value, key) => {
+            response.headers.set(key, value)
+          })
+
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
           )
@@ -34,22 +57,29 @@ export async function proxy(request: NextRequest) {
     }
   )
 
+
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    const loginUrl = new URL('/login', request.url)
+    const loginUrl = new URL('/login', baseUrl)
     loginUrl.searchParams.set('next', pathname)
-    return NextResponse.redirect(loginUrl)
+    const res = NextResponse.redirect(loginUrl)
+    res.headers.set('ngrok-skip-browser-warning', 'true')
+    return res
   }
 
   const role = user.user_metadata?.role as 'user' | 'driver' | undefined
   const isDriverRoute = pathname.startsWith('/driver')
 
   if (isDriverRoute && role !== 'driver') {
-    return NextResponse.redirect(new URL('/home', request.url))
+    const res = NextResponse.redirect(new URL('/home', baseUrl))
+    res.headers.set('ngrok-skip-browser-warning', 'true')
+    return res
   }
   if (!isDriverRoute && role === 'driver') {
-    return NextResponse.redirect(new URL('/driver/dashboard', request.url))
+    const res = NextResponse.redirect(new URL('/driver/dashboard', baseUrl))
+    res.headers.set('ngrok-skip-browser-warning', 'true')
+    return res
   }
 
   if (pathname === '/onboarding' || pathname.startsWith('/driver/onboarding')) {
@@ -65,7 +95,9 @@ export async function proxy(request: NextRequest) {
       .maybeSingle()
 
     if (!data?.is_onboarding_complete) {
-      return NextResponse.redirect(new URL('/driver/onboarding', request.url))
+      const res = NextResponse.redirect(new URL('/driver/onboarding', baseUrl))
+      res.headers.set('ngrok-skip-browser-warning', 'true')
+      return res
     }
   } else {
     const { data } = await supabase
@@ -75,7 +107,9 @@ export async function proxy(request: NextRequest) {
       .maybeSingle()
 
     if (!data?.is_profile_complete) {
-      return NextResponse.redirect(new URL('/onboarding', request.url))
+      const res = NextResponse.redirect(new URL('/onboarding', baseUrl))
+      res.headers.set('ngrok-skip-browser-warning', 'true')
+      return res
     }
   }
 

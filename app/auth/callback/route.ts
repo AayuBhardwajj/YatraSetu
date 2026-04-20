@@ -1,16 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getBaseUrl } from '@/lib/utils/url'
+
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
 
-  // ✅ Dynamic Host Detection for Ngrok Tunnels
-  // Prioritize headers sent by ngrok to ensure we redirect back to the tunnel, not localhost
-  const forwardedHost = request.headers.get('x-forwarded-host')
-  const host = forwardedHost || request.headers.get('host')
-  const protocol = request.headers.get('x-forwarded-proto') || 'https'
-  const baseUrl = `${protocol}://${host}`
+  const baseUrl = getBaseUrl(request)
+
 
   if (!code) return NextResponse.redirect(`${baseUrl}/login?error=missing_code`)
 
@@ -49,13 +47,14 @@ export async function GET(request: Request) {
 
   if (!isComplete) {
     if (effectiveRole === 'driver') {
-      return NextResponse.redirect(new URL('/driver/onboarding', request.url))
+      return NextResponse.redirect(new URL('/driver/onboarding', baseUrl))
     }
-    return NextResponse.redirect(new URL('/onboarding', request.url))
+    return NextResponse.redirect(new URL('/onboarding', baseUrl))
   }
 
   if (effectiveRole === 'driver') {
-    return NextResponse.redirect(new URL('/driver/dashboard', request.url))
+    return NextResponse.redirect(new URL('/driver/dashboard', baseUrl))
   }
-  return NextResponse.redirect(new URL('/home', request.url))
+  return NextResponse.redirect(new URL('/home', baseUrl))
+
 }

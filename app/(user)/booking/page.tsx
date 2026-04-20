@@ -12,6 +12,8 @@ import { PriceRangeBar } from "@/components/user/PriceRangeBar";
 import { MOCK_ML_PRICING } from "@/lib/mock/data";
 import { useRideStore } from "@/store/useRideStore";
 import { useNegotiationStore } from "@/store/useNegotiationStore";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { RideStatus } from "@/types/ride";
 import {
@@ -53,6 +55,8 @@ export default function BookingPage() {
   const dropdownRef  = useRef<HTMLDivElement>(null);
 
   const router = useRouter();
+  const { toast } = useToast();
+  const { user } = useAuthStore();
   const { setRide, destinationName, destinationCoords, setDestinationName, setDestinationCoords } = useRideStore();
   const { initNegotiation } = useNegotiationStore();
 

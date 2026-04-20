@@ -13,14 +13,15 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store/useAuthStore";
+// ✅ ADDED: centralized feed hook + store
+import { useDriverFeed } from "@/hooks/useDriverFeed";
+import { useDriverFeedStore } from "@/store/driverFeedStore";
 
-// Dynamically import map to avoid SSR issues
 const DriverMapWrapper = dynamic(
   () => import("@/components/driver/DriverMapWrapper"),
   { ssr: false, loading: () => <div className="w-full h-full bg-[#0f1923] animate-pulse" /> }
 );
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface RideRequest {
   id: string;
   passenger_id: string;
@@ -36,7 +37,6 @@ interface RideRequest {
   expires_at: string | null;
 }
 
-// ─── Mock data (replace with real DB queries) ─────────────────────────────────
 const RECENT_TRIPS = [
   { id: 1, destination: "Railway Station", time: "2:45 PM", earning: 160, status: "Completed" },
   { id: 2, destination: "Model Town", time: "1:20 PM", earning: 85, status: "Completed" },
@@ -51,7 +51,6 @@ const HOT_ZONES = [
 
 const REQUEST_TIMEOUT = 20;
 
-// ─── Component ────────────────────────────────────────────────────────────────
 export default function DriverDashboard() {
   const [isOnline, setIsOnline] = useState(true);
   const [showRequest, setShowRequest] = useState(false);
@@ -60,35 +59,33 @@ export default function DriverDashboard() {
   const [accepting, setAccepting] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
-
   const router = useRouter();
   const supabase = createClient();
   const { user, driverProfile } = useAuthStore();
 
-  // ── Realtime subscription ────────────────────────────────────────────────
+  // ✅ ADDED: start polling via hook
+  useDriverFeed();
+  // ✅ ADDED: read live requests from store
+  const requests = useDriverFeedStore((s) => s.requests);
+
+  // ✅ REPLACED: old manual supabase.channel useEffect removed entirely.
+  // Now watches the store — when a new ride appears, show popup for it.
   useEffect(() => {
     if (!isOnline) return;
+    if (requests.length === 0) return;
 
-    const channel = supabase
-      .channel("driver-ride-requests")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "ride_requests", filter: "status=eq.open" },
-        (payload) => {
-          const request = payload.new as RideRequest;
-          setCurrentRequest(request);
-          setTimeLeft(REQUEST_TIMEOUT);
-          setShowRequest(true);
-        }
-      )
-      .subscribe((status) => {
-        console.log("Driver realtime:", status);
-      });
+    const latest = requests[0]; // sorted by created_at desc in hook
 
-    return () => { supabase.removeChannel(channel); };
-  }, [isOnline]);
+    // Don't re-trigger if already showing this exact request
+    if (currentRequest?.id === latest.id) return;
 
-  // ── Countdown ────────────────────────────────────────────────────────────
+    console.log("🚗 New ride request detected:", latest.id);
+    setCurrentRequest(latest as RideRequest);
+    setTimeLeft(REQUEST_TIMEOUT);
+    setShowRequest(true);
+  }, [requests, isOnline]); // ✅ removed currentRequest from deps to avoid loop
+
+  // ── Countdown (unchanged) ─────────────────────────────────────────────
   useEffect(() => {
     if (!showRequest) return;
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -112,7 +109,7 @@ export default function DriverDashboard() {
     };
   }, [showRequest]);
 
-  // ── Accept ───────────────────────────────────────────────────────────────
+  // ── Accept (unchanged) ────────────────────────────────────────────────
   const handleAccept = async () => {
     if (!currentRequest || !user) return;
     setAccepting(true);
@@ -134,14 +131,11 @@ export default function DriverDashboard() {
     setCurrentRequest(null);
   };
 
-  // ─── Render ───────────────────────────────────────────────────────────────
+  // ─── Render (unchanged) ───────────────────────────────────────────────
   return (
     <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden bg-[#0f1923]">
-
       {/* ── LEFT: Dark Map Panel (65%) ── */}
       <div className="w-[65%] h-full relative">
-
-        {/* Real map fills entire panel */}
         <div className="absolute inset-0">
           <DriverMapWrapper
             showHotZones={true}
@@ -150,7 +144,7 @@ export default function DriverDashboard() {
           />
         </div>
 
-        {/* Top bar: online toggle + status */}
+        {/* Top bar */}
         <div className="absolute top-5 left-5 right-5 z-10 flex items-center justify-between">
           <div className="flex items-center space-x-3 bg-[#0f1923]/80 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10">
             <div className={cn("w-2.5 h-2.5 rounded-full", isOnline ? "bg-emerald-400 animate-pulse" : "bg-zinc-500")} />
@@ -194,7 +188,6 @@ export default function DriverDashboard() {
           <div className="absolute inset-x-5 bottom-28 z-20 animate-in slide-in-from-bottom-8 fade-in duration-300">
             <div className="bg-[#0f1923] border-2 border-emerald-500/60 rounded-3xl shadow-2xl shadow-emerald-500/10 overflow-hidden">
               <div className="p-5 space-y-4">
-
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -270,7 +263,6 @@ export default function DriverDashboard() {
       {/* ── RIGHT: Dark Operations Panel (35%) ── */}
       <aside className="w-[35%] h-full bg-[#141c26] border-l border-white/5 overflow-y-auto no-scrollbar">
         <div className="p-6 space-y-8">
-
           {/* Driver greeting */}
           <div className="space-y-1">
             <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">Welcome back</p>
@@ -282,9 +274,7 @@ export default function DriverDashboard() {
           {/* Realtime indicator */}
           <div className={cn(
             "flex items-center space-x-2.5 px-4 py-3 rounded-2xl border",
-            isOnline
-              ? "bg-emerald-500/10 border-emerald-500/20"
-              : "bg-zinc-800 border-zinc-700"
+            isOnline ? "bg-emerald-500/10 border-emerald-500/20" : "bg-zinc-800 border-zinc-700"
           )}>
             <Activity className={cn("w-4 h-4", isOnline ? "text-emerald-400" : "text-zinc-600")} />
             <span className={cn("text-xs font-bold uppercase tracking-widest", isOnline ? "text-emerald-400" : "text-zinc-600")}>
