@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 interface RideRequest {
     pickup_lat: number;
@@ -25,9 +25,14 @@ export default function DriverMapWrapper({
     const pickupMarkerRef = useRef<any>(null);
     const dropMarkerRef = useRef<any>(null);
     const routeLineRef = useRef<any>(null);
+    // ✅ ADDED: track when map is ready before drawing markers
+    const [mapReady, setMapReady] = useState(false);
 
+    // ── Initialize map ───────────────────────────────────────────────────
     useEffect(() => {
         if (typeof window === "undefined") return;
+        // ✅ ADDED: bail out if container isn't in DOM yet
+        if (!mapContainerRef.current) return;
 
         import("leaflet").then((L) => {
             if (!mapContainerRef.current) return;
@@ -74,18 +79,25 @@ export default function DriverMapWrapper({
                         map.setView([coords.latitude, coords.longitude], 14);
                         L.marker([coords.latitude, coords.longitude], { icon: driverIcon })
                             .addTo(map).bindPopup("Your location");
+                        // ✅ MOVED: set ready AFTER geolocation resolves
+                        setMapReady(true);
                     },
                     () => {
                         if (!mapInstanceRef.current) return;
                         L.marker([30.9, 75.85], { icon: driverIcon }).addTo(map);
+                        // ✅ MOVED: set ready even if geolocation fails
+                        setMapReady(true);
                     }
                 );
             } else {
                 L.marker([30.9, 75.85], { icon: driverIcon }).addTo(map);
+                // ✅ ADDED: set ready when geolocation not available
+                setMapReady(true);
             }
         });
 
         return () => {
+            setMapReady(false); // ✅ ADDED: reset on unmount
             if (mapInstanceRef.current) {
                 mapInstanceRef.current.remove();
                 mapInstanceRef.current = null;
@@ -96,38 +108,61 @@ export default function DriverMapWrapper({
         };
     }, []);
 
+    // ── Draw ride markers ────────────────────────────────────────────────
     useEffect(() => {
-        if (!mapInstanceRef.current) return;
+        // ✅ FIXED: wait for mapReady before touching the map instance
+        if (!mapReady || !mapInstanceRef.current) return;
 
         import("leaflet").then((L) => {
-            if (pickupMarkerRef.current) { mapInstanceRef.current.removeLayer(pickupMarkerRef.current); pickupMarkerRef.current = null; }
-            if (dropMarkerRef.current) { mapInstanceRef.current.removeLayer(dropMarkerRef.current); dropMarkerRef.current = null; }
-            if (routeLineRef.current) { mapInstanceRef.current.removeLayer(routeLineRef.current); routeLineRef.current = null; }
+            // ✅ ADDED: double-check map instance is still alive inside async call
+            if (!mapInstanceRef.current) return;
+
+            if (pickupMarkerRef.current) {
+                mapInstanceRef.current.removeLayer(pickupMarkerRef.current);
+                pickupMarkerRef.current = null;
+            }
+            if (dropMarkerRef.current) {
+                mapInstanceRef.current.removeLayer(dropMarkerRef.current);
+                dropMarkerRef.current = null;
+            }
+            if (routeLineRef.current) {
+                mapInstanceRef.current.removeLayer(routeLineRef.current);
+                routeLineRef.current = null;
+            }
 
             if (!incomingRequest) return;
 
             const pickupIcon = L.divIcon({
                 className: "",
                 html: `<div style="width:16px;height:16px;background:#10b981;border-radius:50%;border:2.5px solid white;box-shadow:0 0 8px #10b981;"></div>`,
-                iconSize: [16, 16], iconAnchor: [8, 8],
+                iconSize: [16, 16],
+                iconAnchor: [8, 8],
             });
 
             const dropIcon = L.divIcon({
                 className: "",
                 html: `<div style="width:16px;height:16px;background:#f87171;border-radius:50%;border:2.5px solid white;box-shadow:0 0 8px #f87171;"></div>`,
-                iconSize: [16, 16], iconAnchor: [8, 8],
+                iconSize: [16, 16],
+                iconAnchor: [8, 8],
             });
 
             pickupMarkerRef.current = L.marker(
-                [incomingRequest.pickup_lat, incomingRequest.pickup_lng], { icon: pickupIcon }
-            ).addTo(mapInstanceRef.current).bindPopup(`<b>Pickup</b><br/>${incomingRequest.pickup_label}`);
+                [incomingRequest.pickup_lat, incomingRequest.pickup_lng],
+                { icon: pickupIcon }
+            ).addTo(mapInstanceRef.current)
+                .bindPopup(`<b>Pickup</b><br/>${incomingRequest.pickup_label}`);
 
             dropMarkerRef.current = L.marker(
-                [incomingRequest.drop_lat, incomingRequest.drop_lng], { icon: dropIcon }
-            ).addTo(mapInstanceRef.current).bindPopup(`<b>Drop</b><br/>${incomingRequest.drop_label}`);
+                [incomingRequest.drop_lat, incomingRequest.drop_lng],
+                { icon: dropIcon }
+            ).addTo(mapInstanceRef.current)
+                .bindPopup(`<b>Drop</b><br/>${incomingRequest.drop_label}`);
 
             routeLineRef.current = L.polyline(
-                [[incomingRequest.pickup_lat, incomingRequest.pickup_lng], [incomingRequest.drop_lat, incomingRequest.drop_lng]],
+                [
+                    [incomingRequest.pickup_lat, incomingRequest.pickup_lng],
+                    [incomingRequest.drop_lat, incomingRequest.drop_lng],
+                ],
                 { color: "#10b981", weight: 2, dashArray: "6 6", opacity: 0.7 }
             ).addTo(mapInstanceRef.current);
 
@@ -139,7 +174,8 @@ export default function DriverMapWrapper({
                 { padding: [80, 80] }
             );
         });
-    }, [incomingRequest]);
+        // ✅ FIXED: mapReady in deps so markers draw once map is initialized
+    }, [incomingRequest, mapReady]);
 
     return (
         <>
@@ -152,7 +188,10 @@ export default function DriverMapWrapper({
         .leaflet-container { background: #0f1923 !important; }
       `}</style>
             <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-            <div ref={mapContainerRef} style={{ width: "100%", height: "100%", background: "#0f1923" }} />
+            <div
+                ref={mapContainerRef}
+                style={{ width: "100%", height: "100%", background: "#0f1923" }}
+            />
         </>
     );
 }
